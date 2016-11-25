@@ -10,4 +10,25 @@ defined('YII_DEBUG') or define('YII_DEBUG',true);
 defined('YII_TRACE_LEVEL') or define('YII_TRACE_LEVEL',3);
 
 require_once($yii);
-Yii::createWebApplication($config)->run();
+
+
+$app = Yii::createWebApplication($config);
+
+/* PHP Excel */
+Yii::import('application.extensions.yiiexcel.YiiExcel', true);
+Yii::registerAutoloader(array('YiiExcel', 'autoload'), true);
+// PHPExcel_Shared_ZipStreamWrapper::register();
+// if (ini_get('mbstring.func_overload') & 2) :
+//     throw new Exception('Multibyte function overloading in PHP must be disabled for string functions (2).');
+// endif;
+// PHPExcel_Shared_String::buildCharacterSets();
+
+
+
+
+//     // adding PHPExcel autoloader
+//     Yii::import('application.vendors.*');
+//     require_once "PHPExcel/PHPExcel.php";
+//     require_once "PHPExcel/PHPExcel/Autoloader.php";
+//     Yii::registerAutoloader(array('PHPExcel_Autoloader','Load'), true);
+$app->run();
