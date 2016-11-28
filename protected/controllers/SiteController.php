@@ -50,6 +50,12 @@ class SiteController extends Controller
 
 		 $objPHPExcel = new PHPExcel();
          $sheet = $objPHPExcel->getActiveSheet()->setTitle('Simple');
+         $objPHPExcel->getActiveSheet()->getColumnDimension('A')->setAutoSize(true);
+         $objPHPExcel->getActiveSheet()->getColumnDimension('B')->setAutoSize(true);
+         $objPHPExcel->getActiveSheet()->getColumnDimension('C')->setAutoSize(true);
+         $objPHPExcel->getActiveSheet()->getColumnDimension('D')->setAutoSize(true);
+         $objPHPExcel->getActiveSheet()->getColumnDimension('E')->setAutoSize(true);
+         $objPHPExcel->getActiveSheet()->getColumnDimension('F')->setAutoSize(true);
 
          $colonna = 0;
 		 foreach ($coordinatori as $coordinatore) {
@@ -68,9 +74,9 @@ class SiteController extends Controller
 	        			if($pmamaster->MasterID == $master->MasterID){
 	        				 //CERCO I PMS
 							 $criteriaPms = new CDbCriteria();
-					 		 $criteriaPms->with = array('personsMasters.master');
+					 		 $criteriaPms->with = array('personsMasters.master','personsCities');
 							 $criteriaPms->together=true;
-							 $criteriaPms->condition='RoleID=15  AND master.Enabled=1';
+							 $criteriaPms->condition='RoleID=15  AND master.Enabled=1 AND personsCities.CityID=10';
 
 	        				 $criteriaPms->addCondition('master.MasterID='. $master->MasterID . '');
 		 					 $pmsTrovato = $persone->find($criteriaPms);
