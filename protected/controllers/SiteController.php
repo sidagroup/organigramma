@@ -34,16 +34,19 @@ class SiteController extends Controller
 		 $criteriaC = new CDbCriteria();
 		 $criteriaC->with = array('personsMasters.master');
 		 $criteriaC->together=true;
-		 $criteriaC->condition='RoleID=18';
+		 $criteriaC->condition='RoleID=18 AND master.Enabled=1';		 
 		 $coordinatori = $persone->findAll($criteriaC);
 
 		 //PMA
  		 $criteriaPma = new CDbCriteria();
  		 $criteriaPma->with = array('personsMasters.master');
 		 $criteriaPma->together=true;
-		 $criteriaPma->condition='RoleID=11';
+		 $criteriaPma->condition='RoleID=11  AND master.Enabled=1';
 		 $listapma = $persone->findAll($criteriaPma);
 		 
+		
+		 // $listapms = $persone->findAll($criteriaPms);
+
 
 		 $objPHPExcel = new PHPExcel();
          $sheet = $objPHPExcel->getActiveSheet()->setTitle('Simple');
@@ -63,12 +66,25 @@ class SiteController extends Controller
         			foreach ($pma->personsMasters as $pmamaster) {
         				
 	        			if($pmamaster->MasterID == $master->MasterID){
+	        				 //CERCO I PMS
+							 $criteriaPms = new CDbCriteria();
+					 		 $criteriaPms->with = array('personsMasters.master');
+							 $criteriaPms->together=true;
+							 $criteriaPms->condition='RoleID=15  AND master.Enabled=1';
 
-	        				$sheet->setCellValueByColumnAndRow($colonna, $row++, $master->MasterID . ' ' . $pma->FirstName);
+	        				 $criteriaPms->addCondition('master.MasterID='. $master->MasterID . '');
+		 					 $pmsTrovato = $persone->find($criteriaPms);
+							 if($pmsTrovato){
+		        				$sheet->setCellValueByColumnAndRow($colonna, $row++, $master->MasterID . ' - ' . $pma->FirstName . ' - ' . $pmsTrovato->FirstName);
+								} else {
+									$sheet->setCellValueByColumnAndRow($colonna, $row++, $master->MasterID . ' ' . $pma->FirstName );
+								}			        		
+			        		
 	        			} 
-	        			
+
         			}
         		}
+
 
         	}
         	
