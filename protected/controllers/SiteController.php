@@ -27,29 +27,28 @@ class SiteController extends Controller
 	 */
 	public function actionIndex()
 	{
+
+		 $persone = Persons::model();
+		 
+		 $criteria = new CDbCriteria();
+		 $criteria->condition='RoleID=18';
+		 $coordinatori = $persone->findAll($criteria);
+		 //var_dump($coordinatori);
+
 		 $objPHPExcel = new PHPExcel();
-		 $objPHPExcel->setActiveSheetIndex(0)
-        ->setCellValue('A1', 'Hello')
-        ->setCellValue('B2', 'world!')
-        ->setCellValue('C1', 'Hello')
-        ->setCellValue('D2', 'world!');
+         $sheet = $objPHPExcel->getActiveSheet()->setTitle('Simple');
 
-        $objPHPExcel->getActiveSheet()->setTitle('Simple');
+         $colonna = 0;
+		 foreach ($coordinatori as $coordinatore) {
+        	$sheet->setCellValueByColumnAndRow($colonna++, 1, $coordinatore->FirstName . ' ' . $coordinatore->LastName);
+		 	
+		 }
 
-        $objPHPExcel->setActiveSheetIndex(0);
+        
+        $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+        $objWriter->save(Yii::app()->basePath . '/../files/exports/export.xlsx');
 
-        //ob_end_clean();
-        ob_start();
-
-        header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment;filename="test.xls"');
-        header('Cache-Control: max-age=0');
-        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
-        $objWriter->save(Yii::app()->basePath . '/../files/exports/export.xls');
-
-		// renders the view file 'protected/views/site/index.php'
-		// using the default layout 'protected/views/layouts/main.php'
-		$this->render('index');
+	
 	}
 
 	/**
