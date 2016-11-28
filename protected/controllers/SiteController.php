@@ -49,21 +49,27 @@ class SiteController extends Controller
 
 
 		 $objPHPExcel = new PHPExcel();
+       
          $sheet = $objPHPExcel->getActiveSheet()->setTitle('Simple');
-         $objPHPExcel->getActiveSheet()->getColumnDimension('A')->setAutoSize(true);
-         $objPHPExcel->getActiveSheet()->getColumnDimension('B')->setAutoSize(true);
-         $objPHPExcel->getActiveSheet()->getColumnDimension('C')->setAutoSize(true);
-         $objPHPExcel->getActiveSheet()->getColumnDimension('D')->setAutoSize(true);
-         $objPHPExcel->getActiveSheet()->getColumnDimension('E')->setAutoSize(true);
-         $objPHPExcel->getActiveSheet()->getColumnDimension('F')->setAutoSize(true);
 
-         $colonna = 0;
+        
+
+         $colonna = 10;
+
+         $max = 0;
+
 		 foreach ($coordinatori as $coordinatore) {
 		 	$row = 1;
-        	$sheet->setCellValueByColumnAndRow($colonna, $row++, $coordinatore->FirstName . ' ' . $coordinatore->LastName);
+		 	$nPMA = 0; 
 
-        	//CICLO I MASTER DI OGNI COORDINATORE
+
+		 	//Disegno la riga dei cordinatori
+        	$sheet->setCellValueByColumnAndRow($colonna, $row++,  "COORDINATORE\n" . $coordinatore->FirstName ." "  . $coordinatore->LastName);
+
+        	$colonnaPma = $colonna-5;
+        	//CICLO I MASTER DI OGNI COORDINATORE.
         	foreach ($coordinatore->personsMasters as $master) {
+
 
         		//CICLO I PMA
         		foreach ($listapma as $pma) {
@@ -72,6 +78,8 @@ class SiteController extends Controller
         			foreach ($pma->personsMasters as $pmamaster) {
         				
 	        			if($pmamaster->MasterID == $master->MasterID){
+
+	        				$nPMA +=1;
 	        				 //CERCO I PMS
 							 $criteriaPms = new CDbCriteria();
 					 		 $criteriaPms->with = array('personsMasters.master','personsCities');
@@ -81,9 +89,11 @@ class SiteController extends Controller
 	        				 $criteriaPms->addCondition('master.MasterID='. $master->MasterID . '');
 		 					 $pmsTrovato = $persone->find($criteriaPms);
 							 if($pmsTrovato){
-		        				$sheet->setCellValueByColumnAndRow($colonna, $row++, $master->MasterID . ' - ' . $pma->FirstName . ' - ' . $pmsTrovato->FirstName);
+							 	$sheet->setCellValueByColumnAndRow($colonnaPma, $row, $master->MasterID . ' ' . $pma->FirstName );
+		        				$sheet->setCellValueByColumnAndRow($colonnaPma++, $row+2, $pmsTrovato->FirstName);
 								} else {
-									$sheet->setCellValueByColumnAndRow($colonna, $row++, $master->MasterID . ' ' . $pma->FirstName );
+									$sheet->setCellValueByColumnAndRow($colonnaPma, $row, $master->MasterID . ' ' . $pma->FirstName );
+		        				$sheet->setCellValueByColumnAndRow($colonnaPma++, $row+2, '');
 								}			        		
 			        		
 	        			} 
@@ -93,16 +103,30 @@ class SiteController extends Controller
 
 
         	}
+
+        	if ($max < $nPMA) $max=$nPMA;
         	
-        	$colonna +=1; 
+        	$colonna +=13; 
 		 	
 		 }
 
-        
+
+		 var_dump($max);
+
+
+		 //draw($coordinatori,);
+
+		$objPHPExcel->getActiveSheet()->getDefaultColumnDimension()->setWidth(20);
+        $objPHPExcel->getActiveSheet()->getRowDimension('1')->setRowHeight(-1);
         $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
         $objWriter->save(Yii::app()->basePath . '/../files/exports/export.xlsx');
 
 	
+	}
+
+	public function draw(){
+
+
 	}
 
 	/**
