@@ -28,19 +28,51 @@ class SiteController extends Controller
 	public function actionIndex()
 	{
 
-		 $persone = Persons::model();
+		 $persone = Persons::model(); 
 		 
-		 $criteria = new CDbCriteria();
-		 $criteria->condition='RoleID=18';
-		 $coordinatori = $persone->findAll($criteria);
-		 //var_dump($coordinatori);
+		 //COORDINATORI
+		 $criteriaC = new CDbCriteria();
+		 $criteriaC->with = array('personsMasters.master');
+		 $criteriaC->together=true;
+		 $criteriaC->condition='RoleID=18';
+		 $coordinatori = $persone->findAll($criteriaC);
+
+		 //PMA
+ 		 $criteriaPma = new CDbCriteria();
+ 		 $criteriaPma->with = array('personsMasters.master');
+		 $criteriaPma->together=true;
+		 $criteriaPma->condition='RoleID=11';
+		 $listapma = $persone->findAll($criteriaPma);
+		 
 
 		 $objPHPExcel = new PHPExcel();
          $sheet = $objPHPExcel->getActiveSheet()->setTitle('Simple');
 
          $colonna = 0;
 		 foreach ($coordinatori as $coordinatore) {
-        	$sheet->setCellValueByColumnAndRow($colonna++, 1, $coordinatore->FirstName . ' ' . $coordinatore->LastName);
+		 	$row = 1;
+        	$sheet->setCellValueByColumnAndRow($colonna, $row++, $coordinatore->FirstName . ' ' . $coordinatore->LastName);
+
+        	//CICLO I MASTER DI OGNI COORDINATORE
+        	foreach ($coordinatore->personsMasters as $master) {
+
+        		//CICLO I PMA
+        		foreach ($listapma as $pma) {
+
+        			//CICLO I MASTER DEI PMA
+        			foreach ($pma->personsMasters as $pmamaster) {
+        				
+	        			if($pmamaster->MasterID == $master->MasterID){
+
+	        				$sheet->setCellValueByColumnAndRow($colonna, $row++, $master->MasterID . ' ' . $pma->FirstName);
+	        			} 
+	        			
+        			}
+        		}
+
+        	}
+        	
+        	$colonna +=1; 
 		 	
 		 }
 
