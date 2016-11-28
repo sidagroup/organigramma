@@ -38,18 +38,14 @@ class SiteController extends Controller
 
         $objPHPExcel->setActiveSheetIndex(0);
 
-        ob_end_clean();
+        //ob_end_clean();
         ob_start();
 
         header('Content-Type: application/vnd.ms-excel');
         header('Content-Disposition: attachment;filename="test.xls"');
         header('Cache-Control: max-age=0');
         $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
-<<<<<<< HEAD
         $objWriter->save(Yii::app()->basePath . '/../files/exports/export.xls');
-=======
-        $objWriter->save(Yii::app()->basePath . '/../files/exports/export.xlsx');
->>>>>>> 36b7762877c15aeb5062b0e71b95c25ebe30d3ac
 
 		// renders the view file 'protected/views/site/index.php'
 		// using the default layout 'protected/views/layouts/main.php'
