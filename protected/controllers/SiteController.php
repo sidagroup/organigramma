@@ -99,7 +99,7 @@ class SiteController extends Controller
 		$posYCoordinatore = 3;
 		$spazioY = 2;
 
-		$cellWidth = 20;
+		$cellWidth = 5;
 
 
 
@@ -157,6 +157,9 @@ class SiteController extends Controller
 
        		$sheet->setCellValueByColumnAndRow($posXCoordinatore, $posYCoordinatore,  "COORDINATORE\n" . $value[0]->FirstName . " " . $value[0]->LastName);
 
+       		$el =  $sheet->getColumnDimensionByColumn($posXCoordinatore);
+       		$el->setAutoSIze(true);
+
        		$el = $sheet->getStyleByColumnAndRow($posXCoordinatore, $posYCoordinatore);
        		$el->applyFromArray($styleCoordinatore);
        		$el->getAlignment()->setWrapText(true);
@@ -181,6 +184,10 @@ class SiteController extends Controller
        			$sheet->setCellValueByColumnAndRow( $posXpma , $posYCoordinatore + $spazioY,  "PMA\n");
        			$sheet->setCellValueByColumnAndRow($posXpma , $posYCoordinatore + $spazioY + 1,$pma->FirstName . " " . $pma->LastName . "\n" );
        			$sheet->setCellValueByColumnAndRow($posXpma , $posYCoordinatore + $spazioY + 2, $listaMasters);
+
+       			$elpma =  $sheet->getColumnDimensionByColumn($posXpma);
+       			$elpma->setAutoSIze(true);
+
        			
        			$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYCoordinatore + $spazioY);
        			$elpma->applyFromArray($stylePma);
@@ -206,7 +213,8 @@ class SiteController extends Controller
 
        		//STAMPIAMO I PMS
        		foreach ($value[2] as $pmsAncona) {
-       			# code...
+       			
+       			
        				
 
        		}
