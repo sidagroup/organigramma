@@ -28,10 +28,10 @@ class SiteController extends Controller
 	public function actionIndex()
 	{
 
-		$arrayCoordPma = array();
-
+		 $objData = array();
+		
 		 $persone = Persons::model(); 
-		 
+		
 		 //COORDINATORI
 		 $criteriaC = new CDbCriteria();
 		 $criteriaC->with = array('personsMasters.master');
@@ -39,46 +39,183 @@ class SiteController extends Controller
 		 $criteriaC->condition='RoleID=18 AND master.Enabled=1';		 
 		 $coordinatori = $persone->findAll($criteriaC);
 
-		 // //PMA
- 		//  $criteriaPma = new CDbCriteria();
- 		//  $criteriaPma->with = array('personsMasters.master');
-		 // $criteriaPma->together=true;
-		 // $criteriaPma->condition='RoleID=11  AND master.Enabled=1';
+
 		
-
-		 // $listapma = $persone->findAll($criteriaPma);
-		 
-		
-		 // $listapms = $persone->findAll($criteriaPms);
-
-
-		 $objPHPExcel = new PHPExcel();
-       
-         $sheet = $objPHPExcel->getActiveSheet()->setTitle('Simple');
-
         
 
-         $colonna = 10;
-
-         $max = 0;
-
 		 foreach ($coordinatori as $coordinatore) {
-		 	$row = 4;
-		 	$nPMA = 0; 
-
-
-		 	//Disegno la riga dei cordinatori
-        	$sheet->setCellValueByColumnAndRow($colonna, $row,  "COORDINATORE\n" . $coordinatore->FirstName ." "  . $coordinatore->LastName);
-
-        	$row +=2; 
-        	$colonnaPma = $colonna-5;
-        	//CICLO I MASTER DI OGNI COORDINATORE.
-
+		 
         	$arrayMastersCoordinatore = array();
+        	
         	foreach ($coordinatore->personsMasters as $master) {
+        		$arrayMastersCoordinatore[]=$master->MasterID;        		
+        	}
 
-        		$arrayMastersCoordinatore[]=$master->MasterID;
-        		//var_dump($arrayMastersCoordinatore);
+        	 //PMA
+	 		 $criteriaPma = new CDbCriteria();
+	 		 $criteriaPma->with = array('personsMasters.master');
+			 $criteriaPma->together=true;
+			 $criteriaPma->addCondition('RoleID=11');
+			 $criteriaPma->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
+
+			 $listapma = $persone->findAll($criteriaPma);
+			
+			 //ANCONA
+			 $criteriaPms = new CDbCriteria();
+	 		 $criteriaPms->with = array('personsMasters.master','personsCities');
+			 $criteriaPms->together=true;
+			 $criteriaPms->addCondition('RoleID=15 AND personsCities.CityID=10');
+			 $criteriaPms->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
+
+			 $listapms = $persone->findAll($criteriaPms);
+
+			 //OUTSIDER
+			 $criteriaPmsOutsider = new CDbCriteria();
+	 		 $criteriaPmsOutsider->with = array('personsMasters.master','personsCities');
+			 $criteriaPmsOutsider->together=true;
+			 $criteriaPmsOutsider->addCondition('RoleID=15 AND personsCities.CityID!=10');
+			 $criteriaPmsOutsider->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
+
+			 $listapmsOutsider = $persone->findAll($criteriaPmsOutsider);
+
+			 //COSTRUISCO l' OBJECTDATA
+
+			$objData[$coordinatore->PersonID] = array($coordinatore,$listapma,$listapms,$listapmsOutsider);
+
+			//DISEGNO L^organigramma4
+
+        	
+		 }
+		
+		$this->draw($objData);
+	
+	}
+
+
+	public function draw($objData){
+
+		$numeroPma = 0;
+		$posXCoordinatore = 0;
+		$posYCoordinatore = 3;
+		$spazioY = 2;
+
+		$cellWidth = 20;
+
+
+
+		$styleCoordinatore = array(
+				'borders'=>array(
+					'outline'=>array(
+						'style'=>PHPExcel_Style_Border::BORDER_THIN
+						),
+					),
+				'fill'=>array(
+					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
+					'startcolor'=>array(
+						'argb'=>'FFFF00'),
+					),
+				);
+
+		$stylePma = array(
+				'borders'=>array(
+					'outline'=>array(
+						'style'=>PHPExcel_Style_Border::BORDER_THIN
+						),
+					),
+				'fill'=>array(
+					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
+					'startcolor'=>array(
+						'argb'=>'E0FFFF'),
+					),
+				);
+
+		$stylePms = array(
+				'borders'=>array(
+					'outline'=>array(
+						'style'=>PHPExcel_Style_Border::BORDER_THIN
+						),
+					),
+				'fill'=>array(
+					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
+					'startcolor'=>array(
+						'argb'=>'E0FFBF'),
+					),
+				);
+
+
+		$objPHPExcel = new PHPExcel();
+       
+        $sheet = $objPHPExcel->getActiveSheet()->setTitle('Organigramma SIDA');
+
+       $acc = 0;
+
+       foreach ($objData as $key => $value) {
+       	    
+       		$numeroPma = count($value[1]);
+       		$posXCoordinatore = $posXCoordinatore + floor($numeroPma/2) + 1 + $acc;
+       		$acc = floor($numeroPma/2) + 1 ;
+
+       		$sheet->setCellValueByColumnAndRow($posXCoordinatore, $posYCoordinatore,  "COORDINATORE\n" . $value[0]->FirstName . " " . $value[0]->LastName);
+
+       		$el = $sheet->getStyleByColumnAndRow($posXCoordinatore, $posYCoordinatore);
+       		$el->applyFromArray($styleCoordinatore);
+       		$el->getAlignment()->setWrapText(true);
+        	$el->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+        	$el->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+        
+
+
+
+
+       		$posXpma = $posXCoordinatore - ($acc - 1);
+       		
+       		//STAMPIAMO I PMA
+       		foreach ($value[1] as $pma) {
+       			$listaMasters = "";
+       			foreach ($pma->personsMasters as $master) {
+
+       				$listaMasters .= $master->master->ShortDescription . "\n";
+       			}
+
+
+       			$sheet->setCellValueByColumnAndRow( $posXpma , $posYCoordinatore + $spazioY,  "PMA\n");
+       			$sheet->setCellValueByColumnAndRow($posXpma , $posYCoordinatore + $spazioY + 1,$pma->FirstName . " " . $pma->LastName . "\n" );
+       			$sheet->setCellValueByColumnAndRow($posXpma , $posYCoordinatore + $spazioY + 2, $listaMasters);
+       			
+       			$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYCoordinatore + $spazioY);
+       			$elpma->applyFromArray($stylePma);
+       			$elpma->getAlignment()->setWrapText(true);
+        		$elpma->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+        		$elpma->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+
+        		$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYCoordinatore + $spazioY+1);
+       			$elpma->applyFromArray($stylePma);
+       			$elpma->getAlignment()->setWrapText(true);
+        		$elpma->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+        		$elpma->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+
+        		$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYCoordinatore + $spazioY+2);
+       			$elpma->applyFromArray($stylePma);
+       			$elpma->getAlignment()->setWrapText(true);
+        		$elpma->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+        		$elpma->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+       			
+       			$posXpma +=1;
+       			
+       		}
+
+       		//STAMPIAMO I PMS
+       		foreach ($value[2] as $pmsAncona) {
+       			# code...
+       				
+
+       		}
+
+
+       }
+
+
+		//var_dump($arrayMastersCoordinatore);
 
 
         		//CICLO I PMA
@@ -126,107 +263,33 @@ class SiteController extends Controller
         		//}
 
 
-        	}
 
-        	 //PMA
-	 		 $criteriaPma = new CDbCriteria();
-	 		 $criteriaPma->with = array('personsMasters.master');
-			 $criteriaPma->together=true;
-			 $criteriaPma->addCondition('RoleID=11');
-			 $criteriaPma->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
-
-			 $listapma = $persone->findAll($criteriaPma);
-
-			 $numeroPma = count($listapma);
-
-			 $arrayCoordPma[$coordinatore->PersonID] = array($coordinatore,$listapma);
-
-        	if ($max < $nPMA) $max=$nPMA;
-        	
-        	$colonna +=13; 
-        	
-		 	
-		 }
-
-		 var_dump($arrayCoordPma);
-
-
-		 //var_dump($max);
-
-
-		 //draw($coordinatori,);
-
-
-		$styleCoordinatore = array(
-				'borders'=>array(
-					'outline'=>array(
-						'style'=>PHPExcel_Style_Border::BORDER_THIN
-						),
-					),
-				'fill'=>array(
-					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
-					'startcolor'=>array(
-						'argb'=>'FFFF00'),
-					),
-				);
-
-		$stylePma = array(
-				'borders'=>array(
-					'outline'=>array(
-						'style'=>PHPExcel_Style_Border::BORDER_THIN
-						),
-					),
-				'fill'=>array(
-					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
-					'startcolor'=>array(
-						'argb'=>'E0FFFF'),
-					),
-				);
-
-		$stylePms = array(
-				'borders'=>array(
-					'outline'=>array(
-						'style'=>PHPExcel_Style_Border::BORDER_THIN
-						),
-					),
-				'fill'=>array(
-					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
-					'startcolor'=>array(
-						'argb'=>'E0FFBF'),
-					),
-				);
-
-
-		$objPHPExcel->getActiveSheet()->getDefaultColumnDimension()->setWidth(20);
+        $objPHPExcel->getActiveSheet()->getDefaultColumnDimension()->setWidth($cellWidth);
         $objPHPExcel->getActiveSheet()->getRowDimension('4')->setRowHeight(50);
         $objPHPExcel->getActiveSheet()->getStyle('A4:ZZ4')->getAlignment()->setWrapText(true);
         $objPHPExcel->getActiveSheet()->getStyle('A4:ZZ4')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
         $objPHPExcel->getActiveSheet()->getStyle('A4:ZZ4')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
         
-        $objPHPExcel->getActiveSheet()->getStyle('K4')->applyFromArray($styleCoordinatore);
+        // $objPHPExcel->getActiveSheet()->getStyle('K4')->applyFromArray($styleCoordinatore);
 
-        $objPHPExcel->getActiveSheet()->getStyle('A6:ZZ6')->getAlignment()->setWrapText(true);
-        $objPHPExcel->getActiveSheet()->getStyle('A6:ZZ6')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        $objPHPExcel->getActiveSheet()->getStyle('A6:ZZ6')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+        // $objPHPExcel->getActiveSheet()->getStyle('A6:ZZ6')->getAlignment()->setWrapText(true);
+        // $objPHPExcel->getActiveSheet()->getStyle('A6:ZZ6')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+        // $objPHPExcel->getActiveSheet()->getStyle('A6:ZZ6')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
 
-        $objPHPExcel->getActiveSheet()->getStyle('K6')->applyFromArray($stylePma);
+        // $objPHPExcel->getActiveSheet()->getStyle('K6')->applyFromArray($stylePma);
 
-        $objPHPExcel->getActiveSheet()->getStyle('A8:ZZ8')->getAlignment()->setWrapText(true);
-        $objPHPExcel->getActiveSheet()->getStyle('A8:ZZ8')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        $objPHPExcel->getActiveSheet()->getStyle('A8:ZZ8')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+        // $objPHPExcel->getActiveSheet()->getStyle('A8:ZZ8')->getAlignment()->setWrapText(true);
+        // $objPHPExcel->getActiveSheet()->getStyle('A8:ZZ8')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+        // $objPHPExcel->getActiveSheet()->getStyle('A8:ZZ8')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
 
-        $objPHPExcel->getActiveSheet()->getStyle('K8')->applyFromArray($stylePms);
+        // $objPHPExcel->getActiveSheet()->getStyle('K8')->applyFromArray($stylePms);
 
 
 
         $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
         $objWriter->save(Yii::app()->basePath . '/../files/exports/export.xlsx');
 
-	
-	}
 
-
-	public function draw(){
 
 
 	}
