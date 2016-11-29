@@ -28,6 +28,8 @@ class SiteController extends Controller
 	public function actionIndex()
 	{
 
+		$arrayCoordPma = array();
+
 		 $persone = Persons::model(); 
 		 
 		 //COORDINATORI
@@ -37,14 +39,14 @@ class SiteController extends Controller
 		 $criteriaC->condition='RoleID=18 AND master.Enabled=1';		 
 		 $coordinatori = $persone->findAll($criteriaC);
 
-		 //PMA
- 		 $criteriaPma = new CDbCriteria();
- 		 $criteriaPma->with = array('personsMasters.master');
-		 $criteriaPma->together=true;
-		 $criteriaPma->condition='RoleID=11  AND master.Enabled=1';
+		 // //PMA
+ 		//  $criteriaPma = new CDbCriteria();
+ 		//  $criteriaPma->with = array('personsMasters.master');
+		 // $criteriaPma->together=true;
+		 // $criteriaPma->condition='RoleID=11  AND master.Enabled=1';
 		
 
-		 $listapma = $persone->findAll($criteriaPma);
+		 // $listapma = $persone->findAll($criteriaPma);
 		 
 		
 		 // $listapms = $persone->findAll($criteriaPms);
@@ -71,63 +73,85 @@ class SiteController extends Controller
         	$row +=2; 
         	$colonnaPma = $colonna-5;
         	//CICLO I MASTER DI OGNI COORDINATORE.
+
+        	$arrayMastersCoordinatore = array();
         	foreach ($coordinatore->personsMasters as $master) {
+
+        		$arrayMastersCoordinatore[]=$master->MasterID;
+        		//var_dump($arrayMastersCoordinatore);
 
 
         		//CICLO I PMA
-        		foreach ($listapma as $pma) {
+        		//foreach ($listapma as $pma) {
 
         			//CICLO I MASTER DEI PMA
-        			foreach ($pma->personsMasters as $pmamaster) {
+        // 			foreach ($pma->personsMasters as $pmamaster) {
         				
-	        			if($pmamaster->MasterID == $master->MasterID){
+	       //  			if($pmamaster->MasterID == $master->MasterID){
 
-	        				 $nPMA +=1;
-	        				 //CERCO I PMS DI ANCONA
-							 $criteriaPms = new CDbCriteria();
-					 		 $criteriaPms->with = array('personsMasters.master','personsCities');
-							 $criteriaPms->together=true;
-							 $criteriaPms->condition='RoleID=15  AND master.Enabled=1 AND personsCities.CityID=10';
-							 // $criteriaPms->group="`t0_c0`";
+	       //  				 $nPMA +=1;
+	       //  				 //CERCO I PMS DI ANCONA
+							 // $criteriaPms = new CDbCriteria();
+					 		//  $criteriaPms->with = array('personsMasters.master','personsCities');
+							 // $criteriaPms->together=true;
+							 // $criteriaPms->condition='RoleID=15  AND master.Enabled=1 AND personsCities.CityID=10';
+							 // // $criteriaPms->group="`t0_c0`";
 
-	        				 $criteriaPms->addCondition('master.MasterID='. $master->MasterID . '');
-		 					 $pmsTrovato = $persone->find($criteriaPms);
+	       //  				 $criteriaPms->addCondition('master.MasterID='. $master->MasterID . '');
+		 					//  $pmsTrovato = $persone->find($criteriaPms);
 							 
-							 //CERCO I PMS FUORI SEDE
-							 $criteriaPmsOutsider = new CDbCriteria();
-					 		 $criteriaPmsOutsider->with = array('personsMasters.master','personsCities');
-							 $criteriaPmsOutsider->together=true;
-							 $criteriaPmsOutsider->condition='RoleID=15  AND master.Enabled=1 AND personsCities.CityID!=10';
+							 // //CERCO I PMS FUORI SEDE
+							 // $criteriaPmsOutsider = new CDbCriteria();
+					 		//  $criteriaPmsOutsider->with = array('personsMasters.master','personsCities');
+							 // $criteriaPmsOutsider->together=true;
+							 // $criteriaPmsOutsider->condition='RoleID=15  AND master.Enabled=1 AND personsCities.CityID!=10';
 
-							 $criteriaPmsOutsider->addCondition('master.MasterID='. $master->MasterID . '');
-		 					 $pmsTrovatoOutsider = $persone->find($criteriaPmsOutsider);
+							 // $criteriaPmsOutsider->addCondition('master.MasterID='. $master->MasterID . '');
+		 					//  $pmsTrovatoOutsider = $persone->find($criteriaPmsOutsider);
 
-							 if($pmsTrovato){
-							 	$sheet->setCellValueByColumnAndRow($colonnaPma, $row, "PMA\n" . $master->master->ShortDescription . "\n\n". $pma->FirstName . ' ' . $pma->LastName );
-		        				$sheet->setCellValueByColumnAndRow($colonnaPma++, $row+2, "PMS ANCONA \n". $pmsTrovato->FirstName . ' ' . $pmsTrovato->LastName );
-								} else {
-									$sheet->setCellValueByColumnAndRow($colonnaPma, $row, "PMA\n" . $master->master->ShortDescription . "\n\n". $pma->FirstName . ' ' . $pma->LastName );
-		        				$sheet->setCellValueByColumnAndRow($colonnaPma++, $row+2, '');
-								}
+							 // if($pmsTrovato){
+							 // 	$sheet->setCellValueByColumnAndRow($colonnaPma, $row, "PMA\n" . $master->master->ShortDescription . "\n\n". $pma->FirstName . ' ' . $pma->LastName );
+		      //   				$sheet->setCellValueByColumnAndRow($colonnaPma++, $row+2, "PMS ANCONA \n". $pmsTrovato->FirstName . ' ' . $pmsTrovato->LastName );
+								// } else {
+								// 	$sheet->setCellValueByColumnAndRow($colonnaPma, $row, "PMA\n" . $master->master->ShortDescription . "\n\n". $pma->FirstName . ' ' . $pma->LastName );
+		      //   				$sheet->setCellValueByColumnAndRow($colonnaPma++, $row+2, '');
+								// }
 
 
 			        		
-	        			} 
+	       //  			} 
 
-        			}
-        		}
+        // 			}
+
+        		//}
 
 
         	}
 
+        	 //PMA
+	 		 $criteriaPma = new CDbCriteria();
+	 		 $criteriaPma->with = array('personsMasters.master');
+			 $criteriaPma->together=true;
+			 $criteriaPma->addCondition('RoleID=11');
+			 $criteriaPma->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
+
+			 $listapma = $persone->findAll($criteriaPma);
+
+			 $numeroPma = count($listapma);
+
+			 $arrayCoordPma[$coordinatore->PersonID] = array($coordinatore,$listapma);
+
         	if ($max < $nPMA) $max=$nPMA;
         	
         	$colonna +=13; 
+        	
 		 	
 		 }
 
+		 var_dump($arrayCoordPma);
 
-		 var_dump($max);
+
+		 //var_dump($max);
 
 
 		 //draw($coordinatori,);
