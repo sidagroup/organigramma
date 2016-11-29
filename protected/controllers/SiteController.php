@@ -171,7 +171,7 @@ class SiteController extends Controller
 
 
        		$posXpma = $posXCoordinatore - ($acc - 1);
-       		
+       		$posYpma = $posYCoordinatore + $spazioY;
        		//STAMPIAMO I PMA
        		foreach ($value[1] as $pma) {
        			$listaMasters = "";
@@ -181,27 +181,27 @@ class SiteController extends Controller
        			}
 
 
-       			$sheet->setCellValueByColumnAndRow( $posXpma , $posYCoordinatore + $spazioY,  "PMA\n");
-       			$sheet->setCellValueByColumnAndRow($posXpma , $posYCoordinatore + $spazioY + 1,$pma->FirstName . " " . $pma->LastName . "\n" );
-       			$sheet->setCellValueByColumnAndRow($posXpma , $posYCoordinatore + $spazioY + 2, $listaMasters);
+       			$sheet->setCellValueByColumnAndRow( $posXpma , $posYpma ,  "PMA\n");
+       			$sheet->setCellValueByColumnAndRow($posXpma , $posYpma + 1,$pma->FirstName . " " . $pma->LastName . "\n" );
+       			$sheet->setCellValueByColumnAndRow($posXpma , $posYpma + 2, $listaMasters);
 
        			$elpma =  $sheet->getColumnDimensionByColumn($posXpma);
        			$elpma->setAutoSIze(true);
 
        			
-       			$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYCoordinatore + $spazioY);
+       			$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYpma);
        			$elpma->applyFromArray($stylePma);
        			$elpma->getAlignment()->setWrapText(true);
         		$elpma->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
         		$elpma->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
 
-        		$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYCoordinatore + $spazioY+1);
+        		$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYpma + 1);
        			$elpma->applyFromArray($stylePma);
        			$elpma->getAlignment()->setWrapText(true);
         		$elpma->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
         		$elpma->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
 
-        		$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYCoordinatore + $spazioY+2);
+        		$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYpma + 2);
        			$elpma->applyFromArray($stylePma);
        			$elpma->getAlignment()->setWrapText(true);
         		$elpma->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
@@ -211,94 +211,39 @@ class SiteController extends Controller
        			
        		}
 
+       		$posXpmsAncona = $posXCoordinatore - ($acc - 1);
+       		$posYpmsAncona = $posYpma + $spazioY + 2;
        		//STAMPIAMO I PMS
        		foreach ($value[2] as $pmsAncona) {
+       			$sheet->setCellValueByColumnAndRow( $posXpmsAncona , $posYpmsAncona ,  "PMS\n");
+       			$sheet->setCellValueByColumnAndRow($posXpmsAncona , $posYpmsAncona + 1,$pmsAncona->FirstName . " " . $pmsAncona->LastName . "\n" );
+
+       			$elpms =  $sheet->getColumnDimensionByColumn($posXpma);
+       			$elpms->setAutoSIze(true);
+
        			
+       			$elpms = $sheet->getStyleByColumnAndRow($posXpmsAncona, $posYpmsAncona);
+       			$elpms->applyFromArray($stylePms);
+       			$elpms->getAlignment()->setWrapText(true);
+        		$elpms->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+        		$elpms->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+
+        		$elpms = $sheet->getStyleByColumnAndRow($posXpmsAncona, $posYpmsAncona + 1);
+       			$elpms->applyFromArray($stylePms);
+       			$elpms->getAlignment()->setWrapText(true);
+        		$elpms->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
+        		$elpms->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
        			
        				
-
+       			$posXpmsAncona +=1;
        		}
 
 
        }
 
 
-		//var_dump($arrayMastersCoordinatore);
-
-
-        		//CICLO I PMA
-        		//foreach ($listapma as $pma) {
-
-        			//CICLO I MASTER DEI PMA
-        // 			foreach ($pma->personsMasters as $pmamaster) {
-        				
-	       //  			if($pmamaster->MasterID == $master->MasterID){
-
-	       //  				 $nPMA +=1;
-	       //  				 //CERCO I PMS DI ANCONA
-							 // $criteriaPms = new CDbCriteria();
-					 		//  $criteriaPms->with = array('personsMasters.master','personsCities');
-							 // $criteriaPms->together=true;
-							 // $criteriaPms->condition='RoleID=15  AND master.Enabled=1 AND personsCities.CityID=10';
-							 // // $criteriaPms->group="`t0_c0`";
-
-	       //  				 $criteriaPms->addCondition('master.MasterID='. $master->MasterID . '');
-		 					//  $pmsTrovato = $persone->find($criteriaPms);
-							 
-							 // //CERCO I PMS FUORI SEDE
-							 // $criteriaPmsOutsider = new CDbCriteria();
-					 		//  $criteriaPmsOutsider->with = array('personsMasters.master','personsCities');
-							 // $criteriaPmsOutsider->together=true;
-							 // $criteriaPmsOutsider->condition='RoleID=15  AND master.Enabled=1 AND personsCities.CityID!=10';
-
-							 // $criteriaPmsOutsider->addCondition('master.MasterID='. $master->MasterID . '');
-		 					//  $pmsTrovatoOutsider = $persone->find($criteriaPmsOutsider);
-
-							 // if($pmsTrovato){
-							 // 	$sheet->setCellValueByColumnAndRow($colonnaPma, $row, "PMA\n" . $master->master->ShortDescription . "\n\n". $pma->FirstName . ' ' . $pma->LastName );
-		      //   				$sheet->setCellValueByColumnAndRow($colonnaPma++, $row+2, "PMS ANCONA \n". $pmsTrovato->FirstName . ' ' . $pmsTrovato->LastName );
-								// } else {
-								// 	$sheet->setCellValueByColumnAndRow($colonnaPma, $row, "PMA\n" . $master->master->ShortDescription . "\n\n". $pma->FirstName . ' ' . $pma->LastName );
-		      //   				$sheet->setCellValueByColumnAndRow($colonnaPma++, $row+2, '');
-								// }
-
-
-			        		
-	       //  			} 
-
-        // 			}
-
-        		//}
-
-
-
-        $objPHPExcel->getActiveSheet()->getDefaultColumnDimension()->setWidth($cellWidth);
-        $objPHPExcel->getActiveSheet()->getRowDimension('4')->setRowHeight(50);
-        $objPHPExcel->getActiveSheet()->getStyle('A4:ZZ4')->getAlignment()->setWrapText(true);
-        $objPHPExcel->getActiveSheet()->getStyle('A4:ZZ4')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        $objPHPExcel->getActiveSheet()->getStyle('A4:ZZ4')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
-        
-        // $objPHPExcel->getActiveSheet()->getStyle('K4')->applyFromArray($styleCoordinatore);
-
-        // $objPHPExcel->getActiveSheet()->getStyle('A6:ZZ6')->getAlignment()->setWrapText(true);
-        // $objPHPExcel->getActiveSheet()->getStyle('A6:ZZ6')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        // $objPHPExcel->getActiveSheet()->getStyle('A6:ZZ6')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
-
-        // $objPHPExcel->getActiveSheet()->getStyle('K6')->applyFromArray($stylePma);
-
-        // $objPHPExcel->getActiveSheet()->getStyle('A8:ZZ8')->getAlignment()->setWrapText(true);
-        // $objPHPExcel->getActiveSheet()->getStyle('A8:ZZ8')->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        // $objPHPExcel->getActiveSheet()->getStyle('A8:ZZ8')->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
-
-        // $objPHPExcel->getActiveSheet()->getStyle('K8')->applyFromArray($stylePms);
-
-
-
         $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
         $objWriter->save(Yii::app()->basePath . '/../files/exports/export.xlsx');
-
-
-
 
 	}
 
