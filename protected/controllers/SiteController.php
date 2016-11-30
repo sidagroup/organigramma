@@ -36,7 +36,7 @@ class SiteController extends Controller
 		 $criteriaC = new CDbCriteria();
 		 $criteriaC->with = array('personsMasters.master');
 		 $criteriaC->together=true;
-		 $criteriaC->condition='RoleID=18 AND master.Enabled=1';		 
+		 $criteriaC->condition='RoleID=18 AND t.Enabled=1 AND master.Enabled=1';		 
 		 $coordinatori = $persone->findAll($criteriaC);
 
 
@@ -55,7 +55,7 @@ class SiteController extends Controller
 	 		 $criteriaPma = new CDbCriteria();
 	 		 $criteriaPma->with = array('personsMasters.master');
 			 $criteriaPma->together=true;
-			 $criteriaPma->addCondition('RoleID=11');
+			 $criteriaPma->addCondition('RoleID=11 AND t.Enabled=1');
 			 $criteriaPma->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
 
 			 $listapma = $persone->findAll($criteriaPma);
@@ -64,19 +64,29 @@ class SiteController extends Controller
 			 $criteriaPms = new CDbCriteria();
 	 		 $criteriaPms->with = array('personsMasters.master','personsCities.city');
 			 $criteriaPms->together=true;
-			 $criteriaPms->addCondition('RoleID=15 AND personsCities.CityID=10');
+			 $criteriaPms->addCondition('RoleID=15 AND t.Enabled=1 AND personsCities.CityID=10');
 			 $criteriaPms->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
 
 			 $listapms = $persone->findAll($criteriaPms);
 
 			 //OUTSIDER
 			 $criteriaPmsOutsider = new CDbCriteria();
-	 		 $criteriaPmsOutsider->with = array('personsMasters.master','personsCities');
+	 		 $criteriaPmsOutsider->with = array('personsMasters.master','personsCities.city');
 			 $criteriaPmsOutsider->together=true;
-			 $criteriaPmsOutsider->addCondition('RoleID=15 AND personsCities.CityID!=10');
+			 $criteriaPmsOutsider->addCondition('RoleID=15 AND t.Enabled=1 AND personsCities.CityID!=10 AND city.Enabled=1');
 			 $criteriaPmsOutsider->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
+			 $criteriaPmsOutsider->order = 'city.Name';
 
 			 $listapmsOutsider = $persone->findAll($criteriaPmsOutsider);
+
+			 //PMSC
+			 // $criteriaPmsOutsider = new CDbCriteria();
+	 		//  $criteriaPmsOutsider->with = array('personsMasters.master','personsCities');
+			 // $criteriaPmsOutsider->together=true;
+			 // $criteriaPmsOutsider->addCondition('RoleID=10 AND Enabled=1 AND personsCities.CityID!=10');
+			 // $criteriaPmsOutsider->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
+
+			 // $listapmsOutsider = $persone->findAll($criteriaPmsOutsider);
 
 			 //COSTRUISCO l' OBJECTDATA
 
@@ -94,6 +104,7 @@ class SiteController extends Controller
 
 	public function draw($objData){
 
+		// INIT
 		$numeroPma = 0;
 		$posXCoordinatore = 0;
 		$posYCoordinatore = 3;
@@ -101,14 +112,12 @@ class SiteController extends Controller
 
 		$cellWidth = 5;
 
+		//$descrizione = 'Description';
+		$descrizione = 'ShortDescription';
 
 
-		$styleCoordinatore = array(
-				'borders'=>array(
-					'outline'=>array(
-						'style'=>PHPExcel_Style_Border::BORDER_THIN
-						),
-					),
+		//STYLE
+		$styleCoordinatore = array(	
 				'fill'=>array(
 					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
 					'startcolor'=>array(
@@ -117,11 +126,6 @@ class SiteController extends Controller
 				);
 
 		$stylePma = array(
-				'borders'=>array(
-					'outline'=>array(
-						'style'=>PHPExcel_Style_Border::BORDER_THIN
-						),
-					),
 				'fill'=>array(
 					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
 					'startcolor'=>array(
@@ -130,17 +134,69 @@ class SiteController extends Controller
 				);
 
 		$stylePms = array(
-				'borders'=>array(
-					'outline'=>array(
-						'style'=>PHPExcel_Style_Border::BORDER_THIN
-						),
-					),
 				'fill'=>array(
 					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
 					'startcolor'=>array(
 						'argb'=>'E0FFBF'),
 					),
 				);
+
+		$styleTitle = array(
+				'borders'=>array(
+						'top'=>array(
+							'style'=>PHPExcel_Style_Border::BORDER_THIN
+							),
+						'left'=>array(
+							'style'=>PHPExcel_Style_Border::BORDER_THIN
+							),
+						'right'=>array(
+							'style'=>PHPExcel_Style_Border::BORDER_THIN
+							),
+						),
+				'font'=>array(
+					'bold'=>true,
+					),
+				'alignment' => array(
+       				'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+       				'vertical' => PHPExcel_Style_Alignment::VERTICAL_CENTER,
+       				),
+				);
+
+		$styleCorsi = array(
+				'borders'=>array(
+						'outline'=>array(
+							'style'=>PHPExcel_Style_Border::BORDER_THIN
+							),
+						),
+				'font'=>array(
+					'italic'=>true,
+					'size'=>6,
+					),
+				'alignment' => array(
+	       			'wrap' => true,
+	       			'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+	       			'vertical' => PHPExcel_Style_Alignment::VERTICAL_BOTTOM,
+	       			),
+				);
+
+		$styleNomi = array(
+			'borders'=>array(
+						'bottom'=>array(
+							'style'=>PHPExcel_Style_Border::BORDER_THIN
+							),
+						'left'=>array(
+							'style'=>PHPExcel_Style_Border::BORDER_THIN
+							),
+						'right'=>array(
+							'style'=>PHPExcel_Style_Border::BORDER_THIN
+							),
+						),
+			'alignment' => array(
+       			'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+       			'vertical' => PHPExcel_Style_Alignment::VERTICAL_CENTER,
+       			),
+			);
+
 
 
 		$objPHPExcel = new PHPExcel();
@@ -155,34 +211,37 @@ class SiteController extends Controller
        		$posXCoordinatore = $posXCoordinatore + floor($numeroPma/2) + 1 + $acc;
        		$acc = floor($numeroPma/2) + 1 ;
 
-       		$sheet->setCellValueByColumnAndRow($posXCoordinatore, $posYCoordinatore,  "COORDINATORE\n" . $value[0]->FirstName . " " . $value[0]->LastName);
+       		$sheet->setCellValueByColumnAndRow($posXCoordinatore, $posYCoordinatore,  "COORDINATORE");
+       		$sheet->setCellValueByColumnAndRow($posXCoordinatore, $posYCoordinatore+1,  ucfirst(strtolower($value[0]->FirstName)) . " " . ucfirst(strtolower($value[0]->LastName)) );
 
        		$el =  $sheet->getColumnDimensionByColumn($posXCoordinatore);
        		$el->setAutoSIze(true);
 
        		$el = $sheet->getStyleByColumnAndRow($posXCoordinatore, $posYCoordinatore);
        		$el->applyFromArray($styleCoordinatore);
-       		$el->getAlignment()->setWrapText(true);
-        	$el->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        	$el->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_CENTER);
+        	$el->applyFromArray($styleTitle);
+
+        	$el = $sheet->getStyleByColumnAndRow($posXCoordinatore, $posYCoordinatore+1);
+       		$el->applyFromArray($styleCoordinatore);
+       		$el->applyFromArray($styleNomi);
         
 
 
 
 
        		$posXpma = $posXCoordinatore - ($acc - 1);
-       		$posYpma = $posYCoordinatore + $spazioY;
+       		$posYpma = $posYCoordinatore + 1 + $spazioY;
        		//STAMPIAMO I PMA
        		foreach ($value[1] as $pma) {
        			$listaMasters = "";
        			foreach ($pma->personsMasters as $master) {
 
-       				$listaMasters .= $master->master->ShortDescription . "\n";
+       				$listaMasters .= "\n".$master->master[$descrizione];
        			}
 
 
-       			$sheet->setCellValueByColumnAndRow( $posXpma , $posYpma ,  "PMA\n");
-       			$sheet->setCellValueByColumnAndRow($posXpma , $posYpma + 1,$pma->FirstName . " " . $pma->LastName . "\n" );
+       			$sheet->setCellValueByColumnAndRow( $posXpma , $posYpma ,  "PMA");
+       			$sheet->setCellValueByColumnAndRow($posXpma , $posYpma + 1, ucfirst(strtolower($pma->FirstName)) . " " . ucfirst(strtolower($pma->LastName)) );
        			$sheet->setCellValueByColumnAndRow($posXpma , $posYpma + 2, $listaMasters);
 
        			$elpma =  $sheet->getColumnDimensionByColumn($posXpma);
@@ -190,22 +249,17 @@ class SiteController extends Controller
 
        			
        			$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYpma);
-       			$elpma->applyFromArray($stylePma);
-       			$elpma->getAlignment()->setWrapText(true);
-        		$elpma->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        		$elpma->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+       			$elpma->applyFromArray($stylePma);       			
+        		$elpma->applyFromArray($styleTitle);
 
         		$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYpma + 1);
        			$elpma->applyFromArray($stylePma);
-       			$elpma->getAlignment()->setWrapText(true);
-        		$elpma->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        		$elpma->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+       			$elpma->applyFromArray($styleNomi);
+       			
 
         		$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYpma + 2);
        			$elpma->applyFromArray($stylePma);
-       			$elpma->getAlignment()->setWrapText(true);
-        		$elpma->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        		$elpma->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+        		$elpma->applyFromArray($styleCorsi);
        			
         		
         		//
@@ -219,8 +273,8 @@ class SiteController extends Controller
        					
        					foreach ($pmsAncona2->personsMasters as $masterpms) {
        						if($masterpms->MasterID == $masterpma->MasterID){
-       							$sheet->setCellValueByColumnAndRow( $posXpma , $posYpma + 4 ,  "PMS ANCONA\n");
-       							$sheet->setCellValueByColumnAndRow( $posXpma , $posYpma + 5,$pmsAncona2->FirstName . " " . $pmsAncona2->LastName);
+       							$sheet->setCellValueByColumnAndRow( $posXpma , $posYpma + 4 ,  "PMS ANCONA");
+       							$sheet->setCellValueByColumnAndRow( $posXpma , $posYpma + 5, ucfirst(strtolower($pmsAncona2->FirstName)) . " " . ucfirst(strtolower($pmsAncona2->LastName)) );
 
        								 	$elpms =  $sheet->getColumnDimensionByColumn($posXpma);
 						       			$elpms->setAutoSIze(true);
@@ -228,16 +282,12 @@ class SiteController extends Controller
 						       			
 						       			$elpms = $sheet->getStyleByColumnAndRow($posXpma , $posYpma + 4);
 						       			$elpms->applyFromArray($stylePms);
-						       			$elpms->getAlignment()->setWrapText(true);
-						        		$elpms->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-						        		$elpms->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+						        		$elpms->applyFromArray($styleTitle);
 
 						        		$elpms = $sheet->getStyleByColumnAndRow($posXpma , $posYpma + 5);
 						       			$elpms->applyFromArray($stylePms);
-						       			$elpms->getAlignment()->setWrapText(true);
-						        		$elpms->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-						        		$elpms->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
-
+						       			$elpms->applyFromArray($styleNomi);
+						       			
 
 
 
@@ -262,8 +312,8 @@ class SiteController extends Controller
        		
        		
        		foreach ($value[3] as $pmsOutsider) {
-       			$sheet->setCellValueByColumnAndRow( $posXpmsOutsider , $posYpmsOutsider ,  "PMS " . $pmsOutsider->personsCities[0]->city->Name . "\n");
-       			$sheet->setCellValueByColumnAndRow($posXpmsOutsider , $posYpmsOutsider + 1,$pmsOutsider->FirstName . " " . $pmsOutsider->LastName );
+       			$sheet->setCellValueByColumnAndRow( $posXpmsOutsider , $posYpmsOutsider ,  "PMS " . strtoupper($pmsOutsider->personsCities[0]->city->Name) );
+       			$sheet->setCellValueByColumnAndRow($posXpmsOutsider , $posYpmsOutsider + 1, ucfirst(strtolower($pmsOutsider->FirstName)) . " " . ucfirst(strtolower($pmsOutsider->LastName)) );
 
        			$elpmsoutsider =  $sheet->getColumnDimensionByColumn($posXpmsOutsider);
        			$elpmsoutsider->setAutoSIze(true);
@@ -271,15 +321,12 @@ class SiteController extends Controller
        			
        			$elpmsoutsider = $sheet->getStyleByColumnAndRow($posXpmsOutsider, $posYpmsOutsider);
        			$elpmsoutsider->applyFromArray($stylePms);
-       			$elpmsoutsider->getAlignment()->setWrapText(true);
-        		$elpmsoutsider->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        		$elpmsoutsider->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+        		$elpmsoutsider->applyFromArray($styleTitle);
 
         		$elpmsoutsider = $sheet->getStyleByColumnAndRow($posXpmsOutsider, $posYpmsOutsider + 1);
        			$elpmsoutsider->applyFromArray($stylePms);
-       			$elpmsoutsider->getAlignment()->setWrapText(true);
-        		$elpmsoutsider->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);
-        		$elpmsoutsider->getAlignment()->setVertical(PHPExcel_Style_Alignment::VERTICAL_TOP);
+       			$elpmsoutsider->applyFromArray($styleNomi);
+       			
        			
        				
        			$posYpmsOutsider +=3;
@@ -290,9 +337,30 @@ class SiteController extends Controller
 
        }
 
+       //DATA DI CREAZIONE
+       	date_default_timezone_set('Europe/Rome');
+        $time = date("d/m/Y  H:i");
+		$sheet->setCellValue('A8', 'Creato in data: '.  $time);
+		$sheet->getStyle('A8')
+		       ->getNumberFormat()
+		       ->setFormatCode(PHPExcel_Style_NumberFormat::FORMAT_DATE_YYYYMMDDSLASH);
+		 $sheet->getColumnDimensionByColumn('A')->setAutoSIze(true);
+       //LOGO DELLA SIDA
+		$objDrawing = new PHPExcel_Worksheet_Drawing();
+		$objDrawing->setName('Logo');
+		$objDrawing->setDescription('Logo');
+		$objDrawing->setPath(Yii::app()->basePath . '/../files/images/logo.png');
+		$objDrawing->setCoordinates('A1');
+		$objDrawing->setHeight(100);
+		$objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+
+
+		$sheet->setShowGridLines(false);
+		$sheet->getSheetView()->setZoomScale(50);
+		$sheet->getTabColor()->setRGB('007c53');
 
         $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
-        $objWriter->save(Yii::app()->basePath . '/../files/exports/export.xlsx');
+        $objWriter->save(Yii::app()->basePath . '/../files/exports/OrganigrammaSida.xlsx');
 
 	}
 
@@ -309,6 +377,8 @@ class SiteController extends Controller
 				$this->render('error', $error);
 		}
 	}
+
+
 
 	/**
 	 * Displays the contact page
