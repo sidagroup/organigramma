@@ -28,39 +28,36 @@ class SiteController extends Controller
 	public function actionIndex()
 	{
 
+		 //ARRAY ASSOCIATIVO CHE CONTIENE LA LISTA DEI CORDINATORI, DEI PMA E DEI PMS
 		 $objData = array();
 		
 		 $persone = Persons::model(); 
 		
-		 //COORDINATORI
+		 //QUERY COORDINATORI
 		 $criteriaC = new CDbCriteria();
 		 $criteriaC->with = array('personsMasters.master');
 		 $criteriaC->together=true;
 		 $criteriaC->condition='RoleID=18 AND t.Enabled=1 AND master.Enabled=1';		 
 		 $coordinatori = $persone->findAll($criteriaC);
 
-
-		
-        
-
+         //ciclo la lista dei cordinatori
 		 foreach ($coordinatori as $coordinatore) {
-		 
+		 	
+		 	//lista dei master associata al coordinatore
         	$arrayMastersCoordinatore = array();
-        	
         	foreach ($coordinatore->personsMasters as $master) {
         		$arrayMastersCoordinatore[]=$master->MasterID;        		
         	}
 
-        	 //PMA
+        	 //QUERY PMA ASSOCIATI AL COORDINATORE
 	 		 $criteriaPma = new CDbCriteria();
 	 		 $criteriaPma->with = array('personsMasters.master');
 			 $criteriaPma->together=true;
 			 $criteriaPma->addCondition('RoleID=11 AND t.Enabled=1');
 			 $criteriaPma->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
-
 			 $listapma = $persone->findAll($criteriaPma);
 			
-			 //ANCONA
+			 //QUERY PMS DI ANCONA ASSOCIATI AL COORDINATORE
 			 $criteriaPms = new CDbCriteria();
 	 		 $criteriaPms->with = array('personsMasters.master','personsCities.city');
 			 $criteriaPms->together=true;
@@ -69,34 +66,22 @@ class SiteController extends Controller
 
 			 $listapms = $persone->findAll($criteriaPms);
 
-			 //OUTSIDER
+			 //QUERY PMS CHE NON SONO DI ANCONA  ASSOCIATI AL COORDINATORE
 			 $criteriaPmsOutsider = new CDbCriteria();
 	 		 $criteriaPmsOutsider->with = array('personsMasters.master','personsCities.city');
 			 $criteriaPmsOutsider->together=true;
 			 $criteriaPmsOutsider->addCondition('RoleID=15 AND t.Enabled=1 AND personsCities.CityID!=10 AND city.Enabled=1');
 			 $criteriaPmsOutsider->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
 			 $criteriaPmsOutsider->order = 'city.Name';
-
 			 $listapmsOutsider = $persone->findAll($criteriaPmsOutsider);
 
-			 //PMSC
-			 // $criteriaPmsOutsider = new CDbCriteria();
-	 		//  $criteriaPmsOutsider->with = array('personsMasters.master','personsCities');
-			 // $criteriaPmsOutsider->together=true;
-			 // $criteriaPmsOutsider->addCondition('RoleID=10 AND Enabled=1 AND personsCities.CityID!=10');
-			 // $criteriaPmsOutsider->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
-
-			 // $listapmsOutsider = $persone->findAll($criteriaPmsOutsider);
-
-			 //COSTRUISCO l' OBJECTDATA
-
+			 
+			//COSTRUISCO l' OBJECTDATA
 			$objData[$coordinatore->PersonID] = array($coordinatore,$listapma,$listapms,$listapmsOutsider);
-
-			//DISEGNO L^organigramma4
-
         	
 		 }
 		
+		//DISEGNA L'ORGANIGRAMMA A PARTIRE DA OBJDATA
 		$this->draw($objData);
 	
 	}
@@ -105,18 +90,20 @@ class SiteController extends Controller
 	public function draw($objData){
 
 		// INIT
-		$numeroPma = 0;
 		$posXCoordinatore = 0;
 		$posYCoordinatore = 3;
+		//SPAZIATURA VERTICALE TRA COORDINATORI PMA/PMS ANCONA E PMS OUTSIDER
 		$spazioY = 2;
 
+		//DIMENSIONE DELLE CELLE DI DEFAULT
 		$cellWidth = 5;
 
+		//DESCRIZION DEI MASTER (NORMAL O SHORT)
 		//$descrizione = 'Description';
 		$descrizione = 'ShortDescription';
 
 
-		//STYLE
+		//STYLE DELLE CELLE
 		$styleCoordinatore = array(	
 				'fill'=>array(
 					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
@@ -198,14 +185,18 @@ class SiteController extends Controller
 			);
 
 
-
 		$objPHPExcel = new PHPExcel();
        
         $sheet = $objPHPExcel->getActiveSheet()->setTitle('Organigramma SIDA');
 
-       $acc = 0;
-
-       foreach ($objData as $key => $value) {
+  		//CICLO TRA OBJDATA 
+  		//OGNI CHIAVE è L'ID DEL COORDINATORE
+  		//VALUE[0] = COORDINATORE
+  		//VALUE[1] = LISTA DEI PMA
+  		//VALUE[2] = LISTA DEI PMS ANCONA
+  		//VALUE[3] = LISTA DEI PMS FUORI ANCONA
+        $acc = 0;
+        foreach ($objData as $key => $value) {
        	    
        		$numeroPma = count($value[1]);
        		$posXCoordinatore = $posXCoordinatore + floor($numeroPma/2) + 1 + $acc;
@@ -214,6 +205,7 @@ class SiteController extends Controller
        		$sheet->setCellValueByColumnAndRow($posXCoordinatore, $posYCoordinatore,  "COORDINATORE");
        		$sheet->setCellValueByColumnAndRow($posXCoordinatore, $posYCoordinatore+1,  ucfirst(strtolower($value[0]->FirstName)) . " " . ucfirst(strtolower($value[0]->LastName)) );
 
+       		//SETTO GLI STILI ALLE CELLE
        		$el =  $sheet->getColumnDimensionByColumn($posXCoordinatore);
        		$el->setAutoSIze(true);
 
@@ -226,28 +218,26 @@ class SiteController extends Controller
        		$el->applyFromArray($styleNomi);
         
 
-
-
-
        		$posXpma = $posXCoordinatore - ($acc - 1);
        		$posYpma = $posYCoordinatore + 1 + $spazioY;
+       		
        		//STAMPIAMO I PMA
        		foreach ($value[1] as $pma) {
+       			
+       			//COSTRUISCO LA STRINGA DEI MASTER DEL PMA
        			$listaMasters = "";
        			foreach ($pma->personsMasters as $master) {
-
        				$listaMasters .= "\n".$master->master[$descrizione];
        			}
-
 
        			$sheet->setCellValueByColumnAndRow( $posXpma , $posYpma ,  "PMA");
        			$sheet->setCellValueByColumnAndRow($posXpma , $posYpma + 1, ucfirst(strtolower($pma->FirstName)) . " " . ucfirst(strtolower($pma->LastName)) );
        			$sheet->setCellValueByColumnAndRow($posXpma , $posYpma + 2, $listaMasters);
-
+				
+				//SETTO GLI STILI ALLE CELLE
        			$elpma =  $sheet->getColumnDimensionByColumn($posXpma);
        			$elpma->setAutoSIze(true);
 
-       			
        			$elpma = $sheet->getStyleByColumnAndRow($posXpma, $posYpma);
        			$elpma->applyFromArray($stylePma);       			
         		$elpma->applyFromArray($styleTitle);
@@ -262,36 +252,32 @@ class SiteController extends Controller
         		$elpma->applyFromArray($styleCorsi);
        			
         		
-        		//
-
+        		//STAMPIAMO I PMS DI ANCONA
         		foreach ($pma->personsMasters as $masterpma) {
-        			
-
+       				
        				foreach ($value[2] as $pmsAncona2) {
 
-       					
-       					
        					foreach ($pmsAncona2->personsMasters as $masterpms) {
+
+       						//ASSOCIO UN  PMS A UN PMA TRAMITE I MASTER IN COUMUNE
        						if($masterpms->MasterID == $masterpma->MasterID){
+       							
        							$sheet->setCellValueByColumnAndRow( $posXpma , $posYpma + 4 ,  "PMS ANCONA");
        							$sheet->setCellValueByColumnAndRow( $posXpma , $posYpma + 5, ucfirst(strtolower($pmsAncona2->FirstName)) . " " . ucfirst(strtolower($pmsAncona2->LastName)) );
+	
+								//SETTO GLI STILI ALLE CELLE
+								$elpms = $sheet->getColumnDimensionByColumn($posXpma);
+				       			$elpms->setAutoSIze(true);
 
-       								 	$elpms =  $sheet->getColumnDimensionByColumn($posXpma);
-						       			$elpms->setAutoSIze(true);
+				       			$elpms = $sheet->getStyleByColumnAndRow($posXpma , $posYpma + 4);
+				       			$elpms->applyFromArray($stylePms);
+				        		$elpms->applyFromArray($styleTitle);
 
+				        		$elpms = $sheet->getStyleByColumnAndRow($posXpma , $posYpma + 5);
+				       			$elpms->applyFromArray($stylePms);
+				       			$elpms->applyFromArray($styleNomi);
 						       			
-						       			$elpms = $sheet->getStyleByColumnAndRow($posXpma , $posYpma + 4);
-						       			$elpms->applyFromArray($stylePms);
-						        		$elpms->applyFromArray($styleTitle);
-
-						        		$elpms = $sheet->getStyleByColumnAndRow($posXpma , $posYpma + 5);
-						       			$elpms->applyFromArray($stylePms);
-						       			$elpms->applyFromArray($styleNomi);
-						       			
-
-
-
-       							break 2;
+       							break 2; //esco dal ciclo se trovo almeno un master uguale
        						}
        					} 
        					 
@@ -300,25 +286,20 @@ class SiteController extends Controller
        			}
 
        			$posXpma +=1;
-       			
        		}
-
-
-
 
        		//STAMPIAMO I PMS CHE NON SONO DI ANCONA
        		$posXpmsOutsider = $posXCoordinatore;
        		$posYpmsOutsider = $posYpma + 6 + $spazioY;
-       		
-       		
+       		       		
        		foreach ($value[3] as $pmsOutsider) {
        			$sheet->setCellValueByColumnAndRow( $posXpmsOutsider , $posYpmsOutsider ,  "PMS " . strtoupper($pmsOutsider->personsCities[0]->city->Name) );
        			$sheet->setCellValueByColumnAndRow($posXpmsOutsider , $posYpmsOutsider + 1, ucfirst(strtolower($pmsOutsider->FirstName)) . " " . ucfirst(strtolower($pmsOutsider->LastName)) );
 
+       			//SETTO GLI STILI ALLE CELLE
        			$elpmsoutsider =  $sheet->getColumnDimensionByColumn($posXpmsOutsider);
        			$elpmsoutsider->setAutoSIze(true);
 
-       			
        			$elpmsoutsider = $sheet->getStyleByColumnAndRow($posXpmsOutsider, $posYpmsOutsider);
        			$elpmsoutsider->applyFromArray($stylePms);
         		$elpmsoutsider->applyFromArray($styleTitle);
@@ -327,17 +308,12 @@ class SiteController extends Controller
        			$elpmsoutsider->applyFromArray($stylePms);
        			$elpmsoutsider->applyFromArray($styleNomi);
        			
-       			
-       				
        			$posYpmsOutsider +=3;
        		}
 
+       } //FINE DEL CICLO DI OBJDATA
 
-
-
-       }
-
-       //DATA DI CREAZIONE
+       //STAMPO LA DATA DI CREAZIONE
        	date_default_timezone_set('Europe/Rome');
         $time = date("d/m/Y  H:i");
 		$sheet->setCellValue('A8', 'Creato in data: '.  $time);
@@ -345,7 +321,8 @@ class SiteController extends Controller
 		       ->getNumberFormat()
 		       ->setFormatCode(PHPExcel_Style_NumberFormat::FORMAT_DATE_YYYYMMDDSLASH);
 		 $sheet->getColumnDimensionByColumn('A')->setAutoSIze(true);
-       //LOGO DELLA SIDA
+        
+        //STAMPO IL LOGO DELLA SIDA
 		$objDrawing = new PHPExcel_Worksheet_Drawing();
 		$objDrawing->setName('Logo');
 		$objDrawing->setDescription('Logo');
@@ -354,11 +331,12 @@ class SiteController extends Controller
 		$objDrawing->setHeight(100);
 		$objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
-
+		//ALTRI STILI AL MIO FOGLIO EXCEL
 		$sheet->setShowGridLines(false);
 		$sheet->getSheetView()->setZoomScale(50);
 		$sheet->getTabColor()->setRGB('007c53');
 
+		//SCRITTURA SUL FILE
         $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
         $objWriter->save(Yii::app()->basePath . '/../files/exports/OrganigrammaSida.xlsx');
 
