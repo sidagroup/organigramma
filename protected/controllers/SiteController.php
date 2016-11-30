@@ -33,6 +33,12 @@ class SiteController extends Controller
 		
 		 $persone = Persons::model(); 
 		
+
+		 //QUERY MANAGER
+		 $criteriaM = new CDbCriteria();
+		 $criteriaM->condition='RoleID=5';		 
+		 $manager = $persone->find($criteriaM);
+
 		 //QUERY COORDINATORI
 		 $criteriaC = new CDbCriteria();
 		 $criteriaC->with = array('personsMasters.master');
@@ -48,6 +54,30 @@ class SiteController extends Controller
         	foreach ($coordinatore->personsMasters as $master) {
         		$arrayMastersCoordinatore[]=$master->MasterID;        		
         	}
+
+        	 //QUERY MARKETING ASSOCIATI AL COORDINATORE
+	 		 $criteriaMktg = new CDbCriteria();
+	 		 $criteriaMktg->with = array('personsMasters.master');
+			 $criteriaMktg->together=true;
+			 $criteriaMktg->addCondition('RoleID=19 AND t.Enabled=1');
+			 $criteriaMktg->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
+			 $listamktg = $persone->findAll($criteriaMktg);
+
+			 //QUERY DIDATTICA ASSOCIATI AL COORDINATORE
+	 		 $criteriaDid = new CDbCriteria();
+	 		 $criteriaDid->with = array('personsMasters.master');
+			 $criteriaDid->together=true;
+			 $criteriaDid->addCondition('RoleID=7 AND t.Enabled=1');
+			 $criteriaDid->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
+			 $listadid = $persone->findAll($criteriaDid);
+
+			 //QUERY RPA ASSOCIATI AL COORDINATORE
+	 		 $criteriaRpa = new CDbCriteria();
+	 		 $criteriaRpa->with = array('personsMasters.master');
+			 $criteriaRpa->together=true;
+			 $criteriaRpa->addCondition('RoleID=13 AND t.Enabled=1');
+			 $criteriaRpa->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
+			 $listarpa = $persone->findAll($criteriaRpa);
 
         	 //QUERY PMA ASSOCIATI AL COORDINATORE
 	 		 $criteriaPma = new CDbCriteria();
@@ -77,21 +107,24 @@ class SiteController extends Controller
 
 			 
 			//COSTRUISCO l' OBJECTDATA
-			$objData[$coordinatore->PersonID] = array($coordinatore,$listapma,$listapms,$listapmsOutsider);
+			$objData[$coordinatore->PersonID] = array($coordinatore,$listapma,$listapms,$listapmsOutsider,$listamktg,$listadid,$listapma);
         	
 		 }
+
+			
+
 		
 		//DISEGNA L'ORGANIGRAMMA A PARTIRE DA OBJDATA
-		$this->draw($objData);
+		$this->draw($objData,$manager);
 	
 	}
 
 
-	public function draw($objData){
+	public function draw($objData,$manager){
 
 		// INIT
 		$posXCoordinatore = 0;
-		$posYCoordinatore = 3;
+		$posYCoordinatore = 13;
 		//SPAZIATURA VERTICALE TRA COORDINATORI PMA/PMS ANCONA E PMS OUTSIDER
 		$spazioY = 2;
 
@@ -104,6 +137,13 @@ class SiteController extends Controller
 
 
 		//STYLE DELLE CELLE
+		$styleManager = array(	
+				'fill'=>array(
+					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
+					'startcolor'=>array(
+						'argb'=>'FF6666'),
+					),
+				);
 		$styleCoordinatore = array(	
 				'fill'=>array(
 					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
@@ -117,6 +157,14 @@ class SiteController extends Controller
 					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
 					'startcolor'=>array(
 						'argb'=>'E0FFFF'),
+					),
+				);
+
+		$styleAree = array(
+				'fill'=>array(
+					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
+					'startcolor'=>array(
+						'argb'=>'FFE5CC'),
 					),
 				);
 
@@ -195,11 +243,16 @@ class SiteController extends Controller
   		//VALUE[1] = LISTA DEI PMA
   		//VALUE[2] = LISTA DEI PMS ANCONA
   		//VALUE[3] = LISTA DEI PMS FUORI ANCONA
+  		//VALUE[4] = LISTA DEI PMS FUORI ANCONA
+  		//VALUE[5] = LISTA DEI PMS FUORI ANCONA
+  		//VALUE[6] = LISTA DEI PMS FUORI ANCONA
+  		$posXLastCoord = 0;
         $acc = 0;
         foreach ($objData as $key => $value) {
        	    
        		$numeroPma = count($value[1]);
        		$posXCoordinatore = $posXCoordinatore + floor($numeroPma/2) + 1 + $acc;
+       		$posXLastCoord = $posXCoordinatore;
        		$acc = floor($numeroPma/2) + 1 ;
 
        		$sheet->setCellValueByColumnAndRow($posXCoordinatore, $posYCoordinatore,  "COORDINATORE");
@@ -218,10 +271,77 @@ class SiteController extends Controller
        		$el->applyFromArray($styleNomi);
         
 
-       		$posXpma = $posXCoordinatore - ($acc - 1);
-       		$posYpma = $posYCoordinatore + 1 + $spazioY;
        		
+       		//STAMPIAMO l'AREA MARKETING
+       		$posXmktg = $posXCoordinatore -1;
+       		$posYmktg = $posYCoordinatore + 1 + $spazioY;
+
+       		foreach ($value[4] as $mktg) {
+				
+       			$sheet->setCellValueByColumnAndRow( $posXmktg , $posYmktg ,  "AREA MARKETING");
+       			$sheet->setCellValueByColumnAndRow($posXmktg , $posYmktg + 1, ucfirst(strtolower($mktg->FirstName)) . " " . ucfirst(strtolower($mktg->LastName)) );
+
+       			//SETTO GLI STILI ALLE CELLE
+       			$elpma =  $sheet->getColumnDimensionByColumn($posXmktg);
+       			$elpma->setAutoSIze(true);
+
+       			$elpma = $sheet->getStyleByColumnAndRow($posXmktg, $posYmktg);
+       			$elpma->applyFromArray($styleAree);       			
+        		$elpma->applyFromArray($styleTitle);
+
+        		$elpma = $sheet->getStyleByColumnAndRow($posXmktg, $posYmktg + 1);
+       			$elpma->applyFromArray($styleAree);
+       			$elpma->applyFromArray($styleNomi);
+       		}
+
+       		//STAMPIAMO l'AREA DIDATTICA
+       		$posXdid = $posXmktg;
+       		$posYdid = $posYmktg + 1 + $spazioY;
+
+       		foreach ($value[5] as $did) {
+				
+       			$sheet->setCellValueByColumnAndRow( $posXdid , $posYdid ,  "AREA DIDATTICA");
+       			$sheet->setCellValueByColumnAndRow($posXdid , $posYdid + 1, ucfirst(strtolower($did->FirstName)) . " " . ucfirst(strtolower($did->LastName)) );
+
+       			//SETTO GLI STILI ALLE CELLE
+       			$elpma =  $sheet->getColumnDimensionByColumn($posXdid);
+       			$elpma->setAutoSIze(true);
+
+       			$elpma = $sheet->getStyleByColumnAndRow($posXdid, $posYdid);
+       			$elpma->applyFromArray($styleAree);       			
+        		$elpma->applyFromArray($styleTitle);
+
+        		$elpma = $sheet->getStyleByColumnAndRow($posXdid, $posYdid + 1);
+       			$elpma->applyFromArray($styleAree);
+       			$elpma->applyFromArray($styleNomi);
+       		}
+
+       		//STAMPIAMO RPA
+       		$posXrpa = $posXCoordinatore + 1;
+       		$posYrpa = $posYCoordinatore + 1 + $spazioY;
+
+       		foreach ($value[6] as $rpa) {
+				
+       			$sheet->setCellValueByColumnAndRow( $posXrpa , $posYrpa ,  "AREA PLACEMENT");
+       			$sheet->setCellValueByColumnAndRow($posXrpa , $posYrpa + 1, ucfirst(strtolower($rpa->FirstName)) . " " . ucfirst(strtolower($rpa->LastName)) );
+
+       			//SETTO GLI STILI ALLE CELLE
+       			$elpma =  $sheet->getColumnDimensionByColumn($posXrpa);
+       			$elpma->setAutoSIze(true);
+
+       			$elpma = $sheet->getStyleByColumnAndRow($posXrpa, $posYrpa);
+       			$elpma->applyFromArray($styleAree);       			
+        		$elpma->applyFromArray($styleTitle);
+
+        		$elpma = $sheet->getStyleByColumnAndRow($posXrpa, $posYrpa + 1);
+       			$elpma->applyFromArray($styleAree);
+       			$elpma->applyFromArray($styleNomi);
+       		}
+
        		//STAMPIAMO I PMA
+       		$posXpma = $posXCoordinatore - ($acc - 1);
+       		$posYpma = $posYdid + 1 + $spazioY;
+
        		foreach ($value[1] as $pma) {
        			
        			//COSTRUISCO LA STRINGA DEI MASTER DEL PMA
@@ -330,6 +450,22 @@ class SiteController extends Controller
 		$objDrawing->setCoordinates('A1');
 		$objDrawing->setHeight(100);
 		$objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
+
+		//MANAGER
+		$posXmanager = $posXLastCoord/2+2;
+		$sheet->setCellValueByColumnAndRow($posXmanager, 1,  "DIREZIONE");
+		$sheet->setCellValueByColumnAndRow($posXLastCoord/2+2, 2,  $manager->FirstName . ' ' . $manager->LastName);
+		//SETTO GLI STILI ALLE CELLE
+   		$el =  $sheet->getColumnDimensionByColumn($posXmanager);
+   		$el->setAutoSIze(true);
+
+   		$el = $sheet->getStyleByColumnAndRow($posXmanager, 1);
+   		$el->applyFromArray($styleManager);
+    	$el->applyFromArray($styleTitle);
+
+    	$el = $sheet->getStyleByColumnAndRow($posXmanager, 2);
+   		$el->applyFromArray($styleManager);
+   		$el->applyFromArray($styleNomi);
 
 		//ALTRI STILI AL MIO FOGLIO EXCEL
 		$sheet->setShowGridLines(false);
