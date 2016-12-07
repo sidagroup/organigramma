@@ -36,8 +36,24 @@ class SiteController extends Controller
 
 		 //QUERY MANAGER
 		 $criteriaM = new CDbCriteria();
-		 $criteriaM->condition='RoleID=5';		 
+		 $criteriaM->condition='RoleID=5 AND Enabled=1';		 
 		 $manager = $persone->find($criteriaM);
+
+
+		 //QUERY RESPONSABILE MARKETING
+		 $criteriaRM = new CDbCriteria();
+		 $criteriaRM->condition='RoleID=21 AND Enabled=1';		 
+		 $respMktg = $persone->findAll($criteriaRM);
+
+		 //QUERY RESPONSABILE PLACEMENT
+		 $criteriaRP = new CDbCriteria();
+		 $criteriaRP->condition='RoleID=22 AND Enabled=1';		 
+		 $respRp = $persone->findAll($criteriaRP);
+
+		 //QUERY RESPONSABILE DIDATTICA
+		 $criteriaRD = new CDbCriteria();
+		 $criteriaRD->condition='RoleID=23 AND Enabled=1';		 
+		 $respDid = $persone->findAll($criteriaRD);
 
 		 //QUERY COORDINATORI
 		 $criteriaC = new CDbCriteria();
@@ -107,7 +123,7 @@ class SiteController extends Controller
 
 			 
 			//COSTRUISCO l' OBJECTDATA
-			$objData[$coordinatore->PersonID] = array($coordinatore,$listapma,$listapms,$listapmsOutsider,$listamktg,$listadid,$listapma);
+			$objData[$coordinatore->PersonID] = array($coordinatore,$listapma,$listapms,$listapmsOutsider,$listamktg,$listadid,$listarpa);
         	
 		 }
 
@@ -115,18 +131,18 @@ class SiteController extends Controller
 
 		
 		//DISEGNA L'ORGANIGRAMMA A PARTIRE DA OBJDATA
-		$this->draw($objData,$manager);
+		$this->draw($objData,$manager,$respMktg,$respRp,$respDid);
 	
 	}
 
 
-	public function draw($objData,$manager){
+	public function draw($objData,$manager,$respMktg,$respRp,$respDid){
 
 		// INIT
+		$spazioY = 5;
 		$posXCoordinatore = 0;
-		$posYCoordinatore = 13;
+		$posYCoordinatore = 18 + $spazioY;
 		//SPAZIATURA VERTICALE TRA COORDINATORI PMA/PMS ANCONA E PMS OUTSIDER
-		$spazioY = 2;
 
 		//DIMENSIONE DELLE CELLE DI DEFAULT
 		$cellWidth = 5;
@@ -143,6 +159,16 @@ class SiteController extends Controller
 					'startcolor'=>array(
 						'argb'=>'FF6666'),
 					),
+				);
+		$styleResponsabili = array(	
+				'fill'=>array(
+					'type'=>PHPExcel_Style_Fill::FILL_SOLID,
+					'startcolor'=>array(
+						'argb'=>'FFCC80'),
+					),
+				'alignment' => array(
+	       			'wrap' => true,
+	       			),
 				);
 		$styleCoordinatore = array(	
 				'fill'=>array(
@@ -166,6 +192,9 @@ class SiteController extends Controller
 					'startcolor'=>array(
 						'argb'=>'FFE5CC'),
 					),
+				'alignment' => array(
+	       			'wrap' => true,
+	       			),
 				);
 
 		$stylePms = array(
@@ -276,67 +305,70 @@ class SiteController extends Controller
        		$posXmktg = $posXCoordinatore -1;
        		$posYmktg = $posYCoordinatore + 1 + $spazioY;
 
-       		foreach ($value[4] as $mktg) {
+       		$areaMarketing = $this->listUsersToStr($value[4]);
 				
-       			$sheet->setCellValueByColumnAndRow( $posXmktg , $posYmktg ,  "AREA MARKETING");
-       			$sheet->setCellValueByColumnAndRow($posXmktg , $posYmktg + 1, ucfirst(strtolower($mktg->FirstName)) . " " . ucfirst(strtolower($mktg->LastName)) );
+   			$sheet->setCellValueByColumnAndRow( $posXmktg , $posYmktg ,  "MARKETING DI AREA");
+   			$sheet->setCellValueByColumnAndRow($posXmktg , $posYmktg + 1, $areaMarketing );
 
-       			//SETTO GLI STILI ALLE CELLE
-       			$elpma =  $sheet->getColumnDimensionByColumn($posXmktg);
-       			$elpma->setAutoSIze(true);
+   			//SETTO GLI STILI ALLE CELLE
+   			$elpma =  $sheet->getColumnDimensionByColumn($posXmktg);
+   			$elpma->setAutoSIze(true);
 
-       			$elpma = $sheet->getStyleByColumnAndRow($posXmktg, $posYmktg);
-       			$elpma->applyFromArray($styleAree);       			
-        		$elpma->applyFromArray($styleTitle);
+   			$elpma = $sheet->getStyleByColumnAndRow($posXmktg, $posYmktg);
+   			$elpma->applyFromArray($styleAree);       			
+    		$elpma->applyFromArray($styleTitle);
 
-        		$elpma = $sheet->getStyleByColumnAndRow($posXmktg, $posYmktg + 1);
-       			$elpma->applyFromArray($styleAree);
-       			$elpma->applyFromArray($styleNomi);
-       		}
+    		$elpma = $sheet->getStyleByColumnAndRow($posXmktg, $posYmktg + 1);
+   			$elpma->applyFromArray($styleAree);
+   			$elpma->applyFromArray($styleNomi);
+       		
 
        		//STAMPIAMO l'AREA DIDATTICA
        		$posXdid = $posXmktg;
        		$posYdid = $posYmktg + 1 + $spazioY;
 
-       		foreach ($value[5] as $did) {
+       		$areaDid = $this->listUsersToStr($value[5]);
+
 				
-       			$sheet->setCellValueByColumnAndRow( $posXdid , $posYdid ,  "AREA DIDATTICA");
-       			$sheet->setCellValueByColumnAndRow($posXdid , $posYdid + 1, ucfirst(strtolower($did->FirstName)) . " " . ucfirst(strtolower($did->LastName)) );
+   			$sheet->setCellValueByColumnAndRow( $posXdid , $posYdid ,  "DIDATTICA DI AREA");
+   			$sheet->setCellValueByColumnAndRow($posXdid , $posYdid + 1, $areaDid );
 
-       			//SETTO GLI STILI ALLE CELLE
-       			$elpma =  $sheet->getColumnDimensionByColumn($posXdid);
-       			$elpma->setAutoSIze(true);
+   			//SETTO GLI STILI ALLE CELLE
+   			$elpma =  $sheet->getColumnDimensionByColumn($posXdid);
+   			$elpma->setAutoSIze(true);
 
-       			$elpma = $sheet->getStyleByColumnAndRow($posXdid, $posYdid);
-       			$elpma->applyFromArray($styleAree);       			
-        		$elpma->applyFromArray($styleTitle);
+   			$elpma = $sheet->getStyleByColumnAndRow($posXdid, $posYdid);
+   			$elpma->applyFromArray($styleAree);       			
+    		$elpma->applyFromArray($styleTitle);
 
-        		$elpma = $sheet->getStyleByColumnAndRow($posXdid, $posYdid + 1);
-       			$elpma->applyFromArray($styleAree);
-       			$elpma->applyFromArray($styleNomi);
-       		}
+    		$elpma = $sheet->getStyleByColumnAndRow($posXdid, $posYdid + 1);
+   			$elpma->applyFromArray($styleAree);
+   			$elpma->applyFromArray($styleNomi);
+
+       			
 
        		//STAMPIAMO RPA
        		$posXrpa = $posXCoordinatore + 1;
        		$posYrpa = $posYCoordinatore + 1 + $spazioY;
 
-       		foreach ($value[6] as $rpa) {
+       		$areaRpa = $this->listUsersToStr($value[6]);
+       		
 				
-       			$sheet->setCellValueByColumnAndRow( $posXrpa , $posYrpa ,  "AREA PLACEMENT");
-       			$sheet->setCellValueByColumnAndRow($posXrpa , $posYrpa + 1, ucfirst(strtolower($rpa->FirstName)) . " " . ucfirst(strtolower($rpa->LastName)) );
+   			$sheet->setCellValueByColumnAndRow( $posXrpa , $posYrpa ,  "PLACEMENT DI AREA");
+   			$sheet->setCellValueByColumnAndRow($posXrpa , $posYrpa + 1, $areaRpa );
 
-       			//SETTO GLI STILI ALLE CELLE
-       			$elpma =  $sheet->getColumnDimensionByColumn($posXrpa);
-       			$elpma->setAutoSIze(true);
+   			//SETTO GLI STILI ALLE CELLE
+   			$elpma =  $sheet->getColumnDimensionByColumn($posXrpa);
+   			$elpma->setAutoSIze(true);
 
-       			$elpma = $sheet->getStyleByColumnAndRow($posXrpa, $posYrpa);
-       			$elpma->applyFromArray($styleAree);       			
-        		$elpma->applyFromArray($styleTitle);
+   			$elpma = $sheet->getStyleByColumnAndRow($posXrpa, $posYrpa);
+   			$elpma->applyFromArray($styleAree);       			
+    		$elpma->applyFromArray($styleTitle);
 
-        		$elpma = $sheet->getStyleByColumnAndRow($posXrpa, $posYrpa + 1);
-       			$elpma->applyFromArray($styleAree);
-       			$elpma->applyFromArray($styleNomi);
-       		}
+    		$elpma = $sheet->getStyleByColumnAndRow($posXrpa, $posYrpa + 1);
+   			$elpma->applyFromArray($styleAree);
+   			$elpma->applyFromArray($styleNomi);
+       			
 
        		//STAMPIAMO I PMA
        		$posXpma = $posXCoordinatore - ($acc - 1);
@@ -451,21 +483,140 @@ class SiteController extends Controller
 		$objDrawing->setHeight(100);
 		$objDrawing->setWorksheet($objPHPExcel->getActiveSheet());
 
+
 		//MANAGER
 		$posXmanager = $posXLastCoord/2+2;
-		$sheet->setCellValueByColumnAndRow($posXmanager, 1,  "DIREZIONE");
-		$sheet->setCellValueByColumnAndRow($posXLastCoord/2+2, 2,  $manager->FirstName . ' ' . $manager->LastName);
+		$posYmanager = 2;
+		$sheet->setCellValueByColumnAndRow($posXmanager, $posYmanager,  "DIREZIONE");
+		$sheet->setCellValueByColumnAndRow($posXLastCoord/2+2, $posYmanager+1,  ucfirst(strtolower($manager->FirstName)) . ' ' . ucfirst(strtolower($manager->LastName)));
+
+		//RESPONSABILE MARKETING
+		$posXRm = $posXmanager-1;
+		$posYRm = $posYmanager+1+$spazioY;
+		$marketing = $this->listUsersToStr($respMktg);
+		$sheet->setCellValueByColumnAndRow($posXRm, $posYRm,  "RESPONSABILE MARKETING & COMUNICATION");
+		$sheet->setCellValueByColumnAndRow($posXRm, $posYRm+1, $marketing);
+		
+		//RESPOSABILE DIDATTICA
+		$posXRdid = $posXmanager-1;
+		$posYRdid = $posYRm+3;
+		$didattica = $this->listUsersToStr($respDid);		
+		$sheet->setCellValueByColumnAndRow($posXRdid, $posYRdid,  "RESPONSABILE DIDATTICA");
+		$sheet->setCellValueByColumnAndRow($posXRdid, $posYRdid+1,  $didattica);
+
+		//RESPONSABILE PLACEMENT
+		$posXRP = $posXmanager+1;
+		$posYRP = $posYmanager+1+$spazioY;
+		$sheet->setCellValueByColumnAndRow($posXRP, $posYRP,  "RESPONSABILE PLACEMENT");
+		$rps = $this->listUsersToStr($respRp);
+        $sheet->setCellValueByColumnAndRow($posXRP, $posYRP+1, $rps);
+		// //ICT
+		// $posXICT = $posXmanager-1;
+		// $posYICT = $posYRdid+3;
+		// $ICT = $this->listUsersToStr([]);		
+		// $sheet->setCellValueByColumnAndRow($posXICT, $posYICT,  "ICT");
+		// $sheet->setCellValueByColumnAndRow($posXICT, $posYICT+1, $ICT);
+
+        //DESTRO
+  //       //RESPONSABILE QUALITA'
+		// $posXQ = $posXmanager+1;
+		// $posYQ = $posYmanager+1+$spazioY;
+		// $qualita = $this->listUsersToStr([]);
+		// $sheet->setCellValueByColumnAndRow($posXQ, $posYQ,  "QUALITA");
+		// $sheet->setCellValueByColumnAndRow($posXQ, $posYQ+1, $qualita); 
+
+		// //RESPONSABILE FONDI
+		// $posXF = $posXmanager+1;
+		// $posYF = $posYQ+3;
+		// $sheet->setCellValueByColumnAndRow($posXF, $posYF,  "FONDI INTERPROF");
+		// $fondi = $this->listUsersToStr([]);
+		// $sheet->setCellValueByColumnAndRow($posXF, $posYF+1, $fondi);
+
+		// //RESPONSABILE SVILUPPO CONS
+		// $posXSC = $posXmanager+1;
+		// $posYSC = $posYF+3;
+		// $sheet->setCellValueByColumnAndRow($posXSC, $posYSC,  "SVILUPPO CONSULENZA");
+		// $sc = $this->listUsersToStr([]);
+		// $sheet->setCellValueByColumnAndRow($posXSC, $posYSC+1, $sc);
+
+
+
+
 		//SETTO GLI STILI ALLE CELLE
    		$el =  $sheet->getColumnDimensionByColumn($posXmanager);
    		$el->setAutoSIze(true);
+   		$el =  $sheet->getColumnDimensionByColumn($posXRdid);
+   		$el->setAutoSIze(true);
+   		$el =  $sheet->getColumnDimensionByColumn($posXRm);
+   		$el->setAutoSIze(true);
+   		$el =  $sheet->getColumnDimensionByColumn($posXRP);
+   		$el->setAutoSIze(true);
+   		// $el =  $sheet->getColumnDimensionByColumn($posXICT);
+   		// $el->setAutoSIze(true);
+   		// $el =  $sheet->getColumnDimensionByColumn($posXQ);
+   		// $el->setAutoSIze(true);
+   		// $el =  $sheet->getColumnDimensionByColumn($posXF);
+   		// $el->setAutoSIze(true);
+   		// $el =  $sheet->getColumnDimensionByColumn($posXSC);
+   		// $el->setAutoSIze(true);
 
-   		$el = $sheet->getStyleByColumnAndRow($posXmanager, 1);
+   		$el = $sheet->getStyleByColumnAndRow($posXmanager, $posYmanager);
    		$el->applyFromArray($styleManager);
     	$el->applyFromArray($styleTitle);
-
-    	$el = $sheet->getStyleByColumnAndRow($posXmanager, 2);
+    	$el = $sheet->getStyleByColumnAndRow($posXmanager, $posYmanager+1);
    		$el->applyFromArray($styleManager);
    		$el->applyFromArray($styleNomi);
+
+   		$el = $sheet->getStyleByColumnAndRow($posXRm, $posYRm);
+   		$el->applyFromArray($styleResponsabili);
+    	$el->applyFromArray($styleTitle);
+    	$el = $sheet->getStyleByColumnAndRow($posXRm, $posYRm+1);
+   		$el->applyFromArray($styleResponsabili);
+   		$el->applyFromArray($styleNomi);
+
+   		$el = $sheet->getStyleByColumnAndRow($posXRdid, $posYRdid);
+   		$el->applyFromArray($styleResponsabili);
+    	$el->applyFromArray($styleTitle);
+    	$el = $sheet->getStyleByColumnAndRow($posXRdid, $posYRdid+1);
+   		$el->applyFromArray($styleResponsabili);
+   		$el->applyFromArray($styleNomi);
+
+   		$el = $sheet->getStyleByColumnAndRow($posXRP, $posYRP);
+   		$el->applyFromArray($styleResponsabili);
+    	$el->applyFromArray($styleTitle);
+    	$el = $sheet->getStyleByColumnAndRow($posXRP, $posYRP+1);
+   		$el->applyFromArray($styleResponsabili);
+   		$el->applyFromArray($styleNomi);
+
+   		// $el = $sheet->getStyleByColumnAndRow($posXICT, $posYICT);
+   		// $el->applyFromArray($styleResponsabili);
+    	// $el->applyFromArray($styleTitle);
+    	// $el = $sheet->getStyleByColumnAndRow($posXICT, $posYICT+1);
+   		// $el->applyFromArray($styleResponsabili);
+   		// $el->applyFromArray($styleNomi);
+
+
+   		// $el = $sheet->getStyleByColumnAndRow($posXQ, $posYQ);
+   		// $el->applyFromArray($styleResponsabili);
+    	// $el->applyFromArray($styleTitle);
+    	// $el = $sheet->getStyleByColumnAndRow($posXQ, $posYQ+1);
+   		// $el->applyFromArray($styleResponsabili);
+   		// $el->applyFromArray($styleNomi);
+
+   		// $el = $sheet->getStyleByColumnAndRow($posXF, $posYF);
+   		// $el->applyFromArray($styleResponsabili);
+    	// $el->applyFromArray($styleTitle);
+    	// $el = $sheet->getStyleByColumnAndRow($posXF, $posYF+1);
+   		// $el->applyFromArray($styleResponsabili);
+   		// $el->applyFromArray($styleNomi);
+
+   		// $el = $sheet->getStyleByColumnAndRow($posXSC, $posYSC);
+   		// $el->applyFromArray($styleResponsabili);
+    	// $el->applyFromArray($styleTitle);
+    	// $el = $sheet->getStyleByColumnAndRow($posXSC, $posYSC+1);
+   		// $el->applyFromArray($styleResponsabili);
+   		// $el->applyFromArray($styleNomi);
+
 
 		//ALTRI STILI AL MIO FOGLIO EXCEL
 		$sheet->setShowGridLines(false);
@@ -553,5 +704,16 @@ class SiteController extends Controller
 	{
 		Yii::app()->user->logout();
 		$this->redirect(Yii::app()->homeUrl);
+	}
+
+	public function listUsersToStr($list){
+		$str = "";
+		foreach ($list as $k => $v  ) {
+			if($k==count($list)-1) {
+				$str .=ucfirst(strtolower($v->FirstName)) . ' ' . ucfirst(strtolower($v->LastName)); 
+				} else $str .= ucfirst(strtolower($v->FirstName)) . ' ' . ucfirst(strtolower($v->LastName)) ."\n";
+			
+		}
+		return $str;
 	}
 }
