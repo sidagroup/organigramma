@@ -37,6 +37,7 @@ class SiteController extends Controller
 		 $objData = array();
 		
 		 $persone = Persons::model(); 
+		 $personcity = PersonsCities::model();
 		
 
 		 //QUERY MANAGER
@@ -117,14 +118,15 @@ class SiteController extends Controller
 
 			 $listapms = $persone->findAll($criteriaPms);
 
-			 //QUERY PMS CHE NON SONO DI ANCONA  ASSOCIATI AL COORDINATORE
+			  //QUERY PMS CHE NON SONO DI ANCONA  ASSOCIATI AL COORDINATORE
 			 $criteriaPmsOutsider = new CDbCriteria();
-	 		 $criteriaPmsOutsider->with = array('personsMasters.master','personsCities.city');
+	 		 $criteriaPmsOutsider->with = array('person','person.personsMasters','city');
 			 $criteriaPmsOutsider->together=true;
-			 $criteriaPmsOutsider->addCondition('RoleID=15 AND t.Enabled=1 AND personsCities.CityID!=10 AND city.Enabled=1');
+			 $criteriaPmsOutsider->addCondition('person.RoleID=15 AND person.Enabled=1 AND t.CityID!=10 AND city.Enabled=1');
 			 $criteriaPmsOutsider->addInCondition('personsMasters.MasterID',$arrayMastersCoordinatore);
 			 $criteriaPmsOutsider->order = 'city.Name';
-			 $listapmsOutsider = $persone->findAll($criteriaPmsOutsider);
+			 $listapmsOutsider = $personcity->findAll($criteriaPmsOutsider);
+			 var_dump($listapmsOutsider);
 
 			 
 			//COSTRUISCO l' OBJECTDATA
@@ -450,8 +452,8 @@ class SiteController extends Controller
        		$posYpmsOutsider = $posYpma + 6 + $spazioY;
        		       		
        		foreach ($value[3] as $pmsOutsider) {
-       			$sheet->setCellValueByColumnAndRow( $posXpmsOutsider , $posYpmsOutsider ,  "PMS " . strtoupper($pmsOutsider->personsCities[0]->city->Name) );
-       			$sheet->setCellValueByColumnAndRow($posXpmsOutsider , $posYpmsOutsider + 1, ucfirst(strtolower($pmsOutsider->FirstName)) . " " . ucfirst(strtolower($pmsOutsider->LastName)) );
+       			$sheet->setCellValueByColumnAndRow( $posXpmsOutsider , $posYpmsOutsider ,  "PMS " . strtoupper($pmsOutsider->city->Name) );
+       			$sheet->setCellValueByColumnAndRow($posXpmsOutsider , $posYpmsOutsider + 1, ucfirst(strtolower($pmsOutsider->person->FirstName)) . " " . ucfirst(strtolower($pmsOutsider->person->LastName)) );
 
        			//SETTO GLI STILI ALLE CELLE
        			$elpmsoutsider =  $sheet->getColumnDimensionByColumn($posXpmsOutsider);
