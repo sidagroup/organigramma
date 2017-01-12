@@ -238,8 +238,9 @@ class SiteController extends Controller
         'size'=>6,
         ),
         'alignment' => array(
+        'indent' => 1,
         'wrap' => true,
-        'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+        'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_LEFT,
         'vertical' => PHPExcel_Style_Alignment::VERTICAL_BOTTOM,
         ),
         );
@@ -381,7 +382,7 @@ class SiteController extends Controller
                 //COSTRUISCO LA STRINGA DEI MASTER DEL PMA
                 $listaMasters = "";
                 foreach ($pma->personsMasters as $master) {
-                    $listaMasters .= "\n".$master->master[$descrizione];
+                    $listaMasters .= "\n".$master->master[$descrizione]."\n";
                 }
                 
                 $sheet->setCellValueByColumnAndRow( $posXpma , $posYpma ,  "PMA");
