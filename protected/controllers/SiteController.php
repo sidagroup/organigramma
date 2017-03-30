@@ -281,7 +281,10 @@ class SiteController extends Controller
         $posXLastCoord = 0;
         $acc = 0;
         foreach ($objData as $key => $value) {
-            
+            $nuovo = array();
+            $arrPersonCity = array();
+        
+        
             $numeroPma = count($value[1]);
             $posXCoordinatore = $posXCoordinatore + floor($numeroPma/2) + 1 + $acc;
             $posXLastCoord = $posXCoordinatore;
@@ -449,8 +452,21 @@ class SiteController extends Controller
         $posYpmsOutsider = $posYpma + 6 + $spazioY;
         
         foreach ($value[3] as $PersonCityOutsider) {
-            $sheet->setCellValueByColumnAndRow( $posXpmsOutsider , $posYpmsOutsider ,  "PMS " . strtoupper($PersonCityOutsider->city->Name) );
-            $sheet->setCellValueByColumnAndRow($posXpmsOutsider , $posYpmsOutsider + 1, ucfirst(strtolower($PersonCityOutsider->person->FirstName)) . " " . ucfirst(strtolower($PersonCityOutsider->person->LastName)) );
+            array_push($arrPersonCity,[$PersonCityOutsider->city->Name => $PersonCityOutsider->person->FirstName . " " .$PersonCityOutsider->person->LastName]);
+            $nuovo[$PersonCityOutsider->city->Name] = '';
+         }
+          
+
+         foreach($arrPersonCity as $subArray){
+               foreach($subArray as $citta => $nome){
+
+                   $nuovo[$citta] .= "\n" . $nome ;
+            }
+         }
+
+        foreach ($nuovo as $citta => $nomi) {
+            $sheet->setCellValueByColumnAndRow( $posXpmsOutsider , $posYpmsOutsider ,  "PMS " . strtoupper($citta) );
+            $sheet->setCellValueByColumnAndRow($posXpmsOutsider , $posYpmsOutsider + 1, $nomi ) ;
             
             //SETTO GLI STILI ALLE CELLE
             $elpmsoutsider =  $sheet->getColumnDimensionByColumn($posXpmsOutsider);
@@ -466,6 +482,7 @@ class SiteController extends Controller
             
             $posYpmsOutsider +=3;
         }
+        //  var_dump($arrPersonCity);
         
     } //FINE DEL CICLO DI OBJDATA
     
