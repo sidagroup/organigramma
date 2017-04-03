@@ -281,8 +281,9 @@ class SiteController extends Controller
         $posXLastCoord = 0;
         $acc = 0;
         foreach ($objData as $key => $value) {
-            $nuovo = array();
-            $arrPersonCity = array();
+            //INIZIALIZZAZIONE ARRAY PER I PMS OUTSIDER
+            $newPersonCity = array();
+            $tmpPersonCity = array();
         
         
             $numeroPma = count($value[1]);
@@ -452,19 +453,18 @@ class SiteController extends Controller
         $posYpmsOutsider = $posYpma + 6 + $spazioY;
         
         foreach ($value[3] as $PersonCityOutsider) {
-            array_push($arrPersonCity,[$PersonCityOutsider->city->Name => $PersonCityOutsider->person->FirstName . " " .$PersonCityOutsider->person->LastName]);
-            $nuovo[$PersonCityOutsider->city->Name] = '';
+            array_push($tmpPersonCity, [$PersonCityOutsider->city->Name => $PersonCityOutsider->person->FirstName . " " .$PersonCityOutsider->person->LastName]);
+            $newPersonCity[$PersonCityOutsider->city->Name] = '';
          }
           
 
-         foreach($arrPersonCity as $subArray){
-               foreach($subArray as $citta => $nome){
-
-                   $nuovo[$citta] .= "\n" . $nome ;
+         foreach($tmpPersonCity as $subArray) {
+               foreach($subArray as $citta => $nome) {
+                   $newPersonCity[$citta] .= "\n" . $nome ;
             }
          }
 
-        foreach ($nuovo as $citta => $nomi) {
+        foreach ($newPersonCity as $citta => $nomi) {
             $sheet->setCellValueByColumnAndRow( $posXpmsOutsider , $posYpmsOutsider ,  "PMS " . strtoupper($citta) );
             $sheet->setCellValueByColumnAndRow($posXpmsOutsider , $posYpmsOutsider + 1, $nomi ) ;
             
